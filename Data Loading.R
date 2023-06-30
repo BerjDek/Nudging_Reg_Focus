@@ -46,4 +46,21 @@ Unfiltered_Data <- Unfiltered_Data %>% rename( Language = Start.language,
                                                Prom_5 = It.is.important.to.me.that.my.achievements.are.recognized.and.valued.by.other.people.,
                                                Prev_5 = I.often.think.about.what.other.people.expect.of.me.)
 
-Data <- Unfiltered_Data %>% 
+
+#turning the Reg Focus Responses to Numeral
+Unfiltered_Data <- Unfiltered_Data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
+                                              Prom_2 = as.numeric(str_extract(Prom_2, "\\d+")),
+                                              Prom_3 = as.numeric(str_extract(Prom_3, "\\d+")),
+                                              Prom_4 = as.numeric(str_extract(Prom_4, "\\d+")),
+                                              Prom_5 = as.numeric(str_extract(Prom_5, "\\d+")),
+                                              Prev_1 = as.numeric(str_extract(Prev_1, "\\d+")),
+                                              Prev_2 = as.numeric(str_extract(Prev_2, "\\d+")),
+                                              Prev_3 = as.numeric(str_extract(Prev_3, "\\d+")),
+                                              Prev_4 = as.numeric(str_extract(Prev_4, "\\d+")),
+                                              Prev_5 = as.numeric(str_extract(Prev_5, "\\d+")))
+
+
+Data <- Unfiltered_Data %>% filter(Last.page == 5)
+
+www
+summary(Data)
