@@ -5,11 +5,11 @@ library(tidyverse)
 
 #loading Data
 
-Unfiltered_Data <- read.csv("Results.csv")
+Raw_Data <- read.csv("Results.csv")
 
-colnames(Unfiltered_Data)
+colnames(Raw_Data)
 
-Unfiltered_Data <- Unfiltered_Data %>% rename( Language = Start.language,
+Raw_Data <- Raw_Data %>% rename( Language = Start.language,
                                                Consent = I.GIVE.MY.CONSENT.to.participate.in.this.study.and.allow.the.use.of.data.generated.in.Mosquito.Alert.on.my.device.to.be.re.used.in.this.research.project..,
                                                User_ID = user_UUID,
                                                Age = How.old.are.you.,
@@ -47,8 +47,15 @@ Unfiltered_Data <- Unfiltered_Data %>% rename( Language = Start.language,
                                                Prev_5 = I.often.think.about.what.other.people.expect.of.me.)
 
 
+str(Raw_Data)
+
+#modifying Column type ···might be walready a date
+Raw_Data <- Raw_Data %>% mutate(Participation_Date = as.factor(Participation_Date))
+Raw_Data <- Raw_Data %>%  mutate(Participation_Date = ymd(substr(Participation_Date, 1, 10)))
+
+
 #turning the Reg Focus Responses to Numeral
-Unfiltered_Data <- Unfiltered_Data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
+Raw_Data <- Raw_Data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
                                               Prom_2 = as.numeric(str_extract(Prom_2, "\\d+")),
                                               Prom_3 = as.numeric(str_extract(Prom_3, "\\d+")),
                                               Prom_4 = as.numeric(str_extract(Prom_4, "\\d+")),
@@ -59,8 +66,23 @@ Unfiltered_Data <- Unfiltered_Data %>% mutate(Prom_1 = as.numeric(str_extract(Pr
                                               Prev_4 = as.numeric(str_extract(Prev_4, "\\d+")),
                                               Prev_5 = as.numeric(str_extract(Prev_5, "\\d+")))
 
+Raw_Data <- Raw_Data %>%
+  mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
 
-Data <- Unfiltered_Data %>% filter(Last.page == 5)
+#creating an average individual Reg Focus
+Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5)/5)
 
-www
+
+#creating 4 high-order values of Schwartz
+
+Raw_Data <- Raw_Data %>% 
+  mutate(Open_To_Change = (Self_Direction + Stimulation + Hedonism + Social_Expansion)/4) %>% 
+  mutate(Self_Enhancement = (Achievment + Power + Face)/3) %>% 
+  mutate(Cotinuity = (Security + Conformity + Routine)/3) %>% 
+  mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence + #Help_Science)/4 )
+
+
+Data <- Raw_Data %>% filter(Last.page == 5)
+
+
 summary(Data)
