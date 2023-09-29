@@ -77,4 +77,32 @@ Raw_Data <- Raw_Data %>%
   mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+## Calculating Regulatory Focus
+
+The current research sought to investigate the interplay of RF and participation/engagement in Mosquito Alert a citizen science platform involved in ecological monitoring and public health, by motoring invasive mosquito species. 
+
+Given that European countries like Italy have a similar percentage of predominantly promotion focused individuals as the USA (Higgins, 2008), aim was to see if it holds true for participants of such a project.
+
+We expected individuals with a predominant prevention RF to participate.
+Similarly we expect that individuals with differing RF be more active in different types of reports, and preservation oriented communication be more effective in spurring action. The latter two points are going to  be further explored once the behavior of participatns after receiving nudges would be analysed.
+
+To assess dispositional regulatory focus the Regulatory Focus Scale (RFS) (Fellner et al.,2007) was used.
+Participants indicated their agreement (1 = Totally disagree, 7 = Totally agree) to 10 items reflecting either a prevention focus ( five items, e.g.,"Rules and regulations are helpful and necessary for me")  or a promotion focus (five items, e.g.,"I generally solve problems creatively.").
+
+Consistent with previous research and for ease of interpretation of results (e.g., Higgins et al., 2001; Rodrigues, Lopes, & Kumashiro, 2017), we computed an index of RF by subtracting prevention from promotion scores.
+
+The mean score of all participants was -1.4311
+
+```{r RF}
+Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
+mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
+```
+
+
+## Standardized CitSci motivation
+There has also been a recent effort of theory based standardization of citizen science volunteer motivations, in order to effectively manage them. (Levontin e al., 2022) introduced a framework of 15 motivational categories rooted in Schwartz's theory of basic human values. 13 of the categories could be grouped to Schwartz´s four higher-order categories: openness to change, self-enhancement, continuity (conservation), and self-transcendence, and t
+
+``` {r Mot}
+

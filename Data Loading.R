@@ -21,7 +21,7 @@ Raw_Data <- Raw_Data %>% rename( Language = Start.language,
                                                Self_Direction = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.am.interested.in.the.topic.of.this.project.,
                                                Stimulation = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.challenge.myself.and.do.something.new.,
                                                Hedonism = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.s.a.fun.activity.,
-                                               Achievment = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.s.an.opportunity.to.perform.better.than.others.,
+                                               Achievement = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.s.an.opportunity.to.perform.better.than.others.,
                                                Face = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.enhance.my.reputation.,
                                                Security = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.live.in.safer.surroundings.,
                                                Conformity = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....Other.people.I.know.are.participating..,
@@ -70,7 +70,10 @@ Raw_Data <- Raw_Data %>%
   mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
 
 #creating an average individual Reg Focus
-Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5)/5)
+Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
+
+#checking the average
+mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
 
 
 #creating 4 high-order values of Schwartz
@@ -80,7 +83,16 @@ Raw_Data <- Raw_Data %>%
   mutate(Self_Enhancement = (Achievment + Power + Face)/3) %>% 
   mutate(Cotinuity = (Security + Conformity + Routine)/3) %>% 
   mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence + #Help_Science)/4 )
+                                 
+                                 
+Raw_Data <- Raw_Data %>%
+  mutate(Open_To_Change = (Achievement + Power + Hedonism)/3) %>%
+  mutate(Self_Enhancement = (Self_Direction + Stimulation)/2) %>%
+  mutate(Continuity = (Security + Conformity + Tradition)/3) %>%
+  mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence)/3)                                 
 
+                               
+  Routine, help with research/ contriute to science, social expansion, motivation to teach
 
 Data <- Raw_Data %>% filter(Last.page == 5)
 
