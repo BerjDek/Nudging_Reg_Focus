@@ -52,6 +52,8 @@ str(Raw_Data)
 #modifying Column type ···might be walready a date
 Raw_Data <- Raw_Data %>% mutate(Participation_Date = as.factor(Participation_Date))
 Raw_Data <- Raw_Data %>%  mutate(Participation_Date = ymd(substr(Participation_Date, 1, 10)))
+Raw_Data <- Raw_Data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
+
 
 
 #turning the Reg Focus Responses to Numeral
@@ -69,30 +71,137 @@ Raw_Data <- Raw_Data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+"))
 Raw_Data <- Raw_Data %>%
   mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
 
+
+
+#creating age groups
+Raw_Data <- Raw_Data %>%
+  mutate(Age_Group = case_when(
+    Age >= 18 & Age <= 25 ~ '18-25',
+    Age >= 26 & Age <= 35 ~ '26-35',
+    Age >= 36 & Age <= 45 ~ '36-45',
+    Age >= 46 & Age <= 55 ~ '46-55',
+    Age >= 56 & Age <= 65 ~ '56-65',
+    Age >= 66 ~ '66 and older',
+    TRUE ~ 'Unknown'  
+  ))
+
+
+
 #creating an average individual Reg Focus
 Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
 
-#checking the average
+str(Data)
+
+#data cleaning and Exploration
+
+#filtering to those who consented and completed the survey.
+
+Data <- Raw_Data %>%
+  filter(Last.page  == 5 & Consent == "Yes")
+
+#Exploring the age of Participants
+
+mean(Data$Age, na.rm = TRUE) # average age is 48.72687
+
+
+ggplot(Data, aes(x = Age_Group)) +
+  geom_bar(fill = 'blue') +
+  labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 0, hjust = 1))
+
+# Gender Distribution
+gender_dist <- Data %>%
+  group_by(Gender) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Frequency))  #128 males to 93 females 
+
+
+ggplot(gender_dist, aes(x = reorder(Gender, -Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
+  labs(title = "Gender Distribution", x = "Gender", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+
+# country distribution
+Country_dist <- Data %>%
+  group_by(Country) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Frequency))
+
+ggplot(Country_dist, aes(x = reorder(Country, -Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
+  labs(title = "Country Distribution", x = "Country", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+ #majority of participates are from Spain(107) and Italy (81) with Netherlanders coming in 3rd (22)
+
+
+
+# start date for participation
+Start_dist <- Data %>%
+  group_by(Participation_Date) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Frequency))
+
+ggplot(Start_dist, aes(x = reorder(Participation_Date, -Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
+  labs(title = "Participant Start Date Distribution", x = "Start Year", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+
+#checking the average Regulatory Focus
 mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
+
+
+
+#before creating higher level orders lets see the various levels of each motivator.
+
+
+STM_columns <- Raw_Data %>% select(Self_Direction:Env_Change)
+
+STM_averages <- STM_columns %>%
+  summarise_all(~ mean(., na.rm = TRUE)) %>%
+  gather(key = "Variable", value = "Average") %>%
+  arrange(desc(Average))
+
+ggplot(STM_averages, aes(x = reorder(Variable, Average), y = Average)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +  
+  theme_minimal() +
+  labs(x = "Motivator", y = "Average") +
+  geom_text(aes(label = round(Average, 2)), hjust = -0.2, size = 3) +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+
 
 
 #creating 4 high-order values of Schwartz
 
-Raw_Data <- Raw_Data %>% 
-  mutate(Open_To_Change = (Self_Direction + Stimulation + Hedonism + Social_Expansion)/4) %>% 
-  mutate(Self_Enhancement = (Achievment + Power + Face)/3) %>% 
-  mutate(Cotinuity = (Security + Conformity + Routine)/3) %>% 
-  mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence + #Help_Science)/4 )
+#Raw_Data <- Raw_Data %>%  mutate(Open_To_Change = (Self_Direction + Stimulation + Hedonism + Social_Expansion)/4) %>% mutate(Self_Enhancement = (Achievment + Power + Face)/3) %>% mutate(Cotinuity = (Security + Conformity + Routine)/3) %>% mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence + Help_Science)/4 )
                                  
-                                 
+  
+
 Raw_Data <- Raw_Data %>%
   mutate(Open_To_Change = (Achievement + Power + Hedonism)/3) %>%
-  mutate(Self_Enhancement = (Self_Direction + Stimulation)/2) %>%
-  mutate(Continuity = (Security + Conformity + Tradition)/3) %>%
-  mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence)/3)                                 
+  mutate(Self_Enhancement = (Self_Direction + Stimulation + face) %>%
+  mutate(Continuity = (Security + Conformity)/3) %>%
+  mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolenc+ Help_Science)/4)                                 
 
-                               
-  Routine, help with research/ contriute to science, social expansion, motivation to teach
+mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
+Raw_Data <- Raw_Data %>% mean(
+
+ Routine, help with research/ contriute to science, social expansion, motivation to teach
 
 Data <- Raw_Data %>% filter(Last.page == 5)
 
