@@ -49,7 +49,7 @@ Raw_Data <- Raw_Data %>% rename( Language = Start.language,
 
 str(Raw_Data)
 
-#modifying Column type ···might be walready a date
+#modifying Column type ···might be already a date
 Raw_Data <- Raw_Data %>% mutate(Participation_Date = as.factor(Participation_Date))
 Raw_Data <- Raw_Data %>%  mutate(Participation_Date = ymd(substr(Participation_Date, 1, 10)))
 Raw_Data <- Raw_Data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
@@ -98,6 +98,19 @@ str(Data)
 
 Data <- Raw_Data %>%
   filter(Last.page  == 5 & Consent == "Yes")
+
+
+nrow(Raw_Data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
+
+nrow(Raw_Data %>% filter(Consent == "Yes", nzchar(User_ID)))
+
+#from the original 450 Observers there are 227 that have completed the entire survey, and whose entries will be analyzed. 3 of them 
+#did not have a UUID (probably team members that received the link or something went off in their app). The total number of users that have
+#provided consent and ID, making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is 258
+# 224 of which have provided infor on their reg focus as well.
+
+
+
 
 #Exploring the age of Participants
 
@@ -155,6 +168,27 @@ ggplot(Start_dist, aes(x = reorder(Participation_Date, -Frequency), y = Frequenc
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "none")
+
+#the users weren't as skewed to 2023 with majority at 75 but not that far off from 2022 (57) and 2021(41)
+
+
+# Network & other citisci
+
+Network_dist <- Data %>%
+  group_by(Network) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Network))
+
+ggplot(Network_dist, aes(x = Network, y = Frequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
+  labs(title = "Participant Network Distribution", x = "Network of Other Participants", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+
+
+#Most of the users don't know anyone else that is using the app.
 
 #checking the average Regulatory Focus
 mean(Raw_Data$Reg_Orientation, na.rm = TRUE)

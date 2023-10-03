@@ -9,21 +9,20 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##Loading Packages
-```{r Package}
+### Loaded Packages
+- tidyverse
+```{r Package , include=FALSE}
 library(tidyverse)
-
 ```
 
+### Data Upload Cleaning
 
-## Uploading the Data
+Data was Downloaded as CSV from LimeSurvey,and loaded to R and column names have been simplified.
 
-Data is Downloaded as CSV from LimeSurvey, Loaded and the Column names are simplified. 
 
-```{r upload}
+```{r upload, echo = FALSE}
 Raw_Data <- read.csv("Results.csv")
 
-colnames(Raw_Data)
 
 Raw_Data <- Raw_Data %>% rename( Language = Start.language,
                                                Consent = I.GIVE.MY.CONSENT.to.participate.in.this.study.and.allow.the.use.of.data.generated.in.Mosquito.Alert.on.my.device.to.be.re.used.in.this.research.project..,
@@ -61,20 +60,127 @@ Raw_Data <- Raw_Data %>% rename( Language = Start.language,
                                                Prom_4 = I.like.trying.out.lots.of.different.things..and.am.often.successful.in.doing.so.,
                                                Prom_5 = It.is.important.to.me.that.my.achievements.are.recognized.and.valued.by.other.people.,
                                                Prev_5 = I.often.think.about.what.other.people.expect.of.me.)
-
-
+colnames(Raw_Data)
 
 ```
 
-## Converting Columns to proper format
+## Converting columns to Proper Format
 
-to convert the columns that relate to regulatory focus questions to numeric we use mutate_at() to apply a transformation to multiple columns at once, vars(starts_with("Prom_"), starts_with("Prev_")) selects required column. list() function is used to create a list. Inside as.numeric, str_extract()  extract substrings from text with . being a placeholder that refers to the column being processed, "\\d+" is a regular expression pattern that matches one or more digits (0-9) in the text. \ indicates that the character following it is special, d represents digit and +  is to say it can be one or more digits.for example applying "\d+" to the string "abc123xyz," it will match "123" because it's a sequence of one or more digits in the text.
+- Non responses to Country have been converted to "prefer not to say"
+- Responses to Reg Focus questions converted to Numerals
 
+```{r conversion, echo=FALSE}
+Raw_Data <- Raw_Data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
 
-
-```{r conversion}
 Raw_Data <- Raw_Data %>%
   mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
+```
+
+
+## Adding New Columns
+- Added Age Groups (could be modified)
+- Added a column with the calculated dispostional Regulatory Focus of each participant
+- Removed Redundant Columns like Seed and Date Submitted
+
+```{r adding new columns}
+Raw_Data <- Raw_Data %>%
+  mutate(Age_Group = case_when(
+    Age >= 18 & Age <= 25 ~ '18-25',
+    Age >= 26 & Age <= 35 ~ '26-35',
+    Age >= 36 & Age <= 45 ~ '36-45',
+    Age >= 46 & Age <= 55 ~ '46-55',
+    Age >= 56 & Age <= 65 ~ '56-65',
+    Age >= 66 ~ '66 and older',
+    TRUE ~ 'Unknown'  
+  ))
+
+Raw_Data <- Raw_Data %>% 
+  mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2 
+                            - Prev_3- Prev_4- Prev_5))
+
+Raw_Data <- Raw_Data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+                                Age_Group, Gender, Country, Participation_Date, Network, 
+                                Other_Citi_Sci, Self_Direction, Stimulation, Hedonism, 
+                                Achievment, Face, Security, Conformity, Benevolence, 
+                                Universalism_Social, Universalism_Nature, Routine, 
+                                Social_Expansion, Power, Help_Science, Teaching, Resentment, 
+                                Env_Change, Reg_Orientation, Prom_1, Prom_2, Prom_3, Prom_4, 
+                                Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5 )
+
+colnames(Raw_Data)
+```
+
+
+## Row Filtering
+
+In order to process the variables the Original data set was cleaned to include those that completed the survey. 
+
+From the original **450** Observers there are **227** that have completed the entire survey, and whose entries will be analyzed. **3** of them 
+did not have a UUID (probably team members that received the link or something went off in their app), not impacting current analysis but not allowing further investigation of its relation with on App behavior.
+
+The total number of users from total that have clicked on the link and have provided consent and ID making them eligible for the messaging experiment is **258** of which **224** have provided information on their reg focus as well..
+
+```{r filtering rows, echo=FALSE, results='hide'}
+Data <- Raw_Data %>%
+  filter(Last.page  == 5 & Consent == "Yes")
+
+
+nrow(Raw_Data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
+
+nrow(Raw_Data %>% filter(Consent == "Yes", nzchar(User_ID)))
+```
+
+
+## Age
+
+The average age of survey participants was **48.7**
+The distribution was similar to earlier studies with the large majority of participants being between **35-64** 
+
+```{r age, results='hide'}
+mean(Data$Age, na.rm = TRUE) 
+
+ggplot(Data, aes(x = Age_Group)) +
+  geom_bar(fill = 'blue') +
+  labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 0, hjust = 1))
+```
+
+
+## Gender Distribution
+**128** males to **93** females, **3** non-binary, **1** transgender, and **3** prefer not to say 
+
+```{r gender}
+gender_dist <- Data %>%
+  group_by(Gender) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Frequency))  
+
+
+ggplot(gender_dist, aes(x = reorder(Gender, -Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) + 
+  labs(title = "Gender Distribution", x = "Gender", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+```
+## Country Distribution
+Majority of participates were from Spain(107) and Italy (81) with Netherlanders coming in 3rd (22)
+
+```{r country}
+Country_dist <- Data %>%
+  group_by(Country) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Frequency))
+
+ggplot(Country_dist, aes(x = reorder(Country, -Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) + 
+  labs(title = "Country Distribution", x = "Country", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
 ```
 
 
@@ -86,7 +192,7 @@ The current research sought to investigate the interplay of RF and participation
 Given that European countries like Italy have a similar percentage of predominantly promotion focused individuals as the USA (Higgins, 2008), aim was to see if it holds true for participants of such a project.
 
 We expected individuals with a predominant prevention RF to participate.
-Similarly we expect that individuals with differing RF be more active in different types of reports, and preservation oriented communication be more effective in spurring action. The latter two points are going to  be further explored once the behavior of participatns after receiving nudges would be analysed.
+Similarly we expect that individuals with differing RF be more active in different types of reports, and preservation oriented communication be more effective in spurring action. The latter two points are going to  be further explored once the behavior of participants after receiving nudges would be analysed.
 
 To assess dispositional regulatory focus the Regulatory Focus Scale (RFS) (Fellner et al.,2007) was used.
 Participants indicated their agreement (1 = Totally disagree, 7 = Totally agree) to 10 items reflecting either a prevention focus ( five items, e.g.,"Rules and regulations are helpful and necessary for me")  or a promotion focus (five items, e.g.,"I generally solve problems creatively.").
@@ -96,13 +202,31 @@ Consistent with previous research and for ease of interpretation of results (e.g
 The mean score of all participants was -1.4311
 
 ```{r RF}
-Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
 mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
 ```
 
 
 ## Standardized CitSci motivation
-There has also been a recent effort of theory based standardization of citizen science volunteer motivations, in order to effectively manage them. (Levontin e al., 2022) introduced a framework of 15 motivational categories rooted in Schwartz's theory of basic human values. 13 of the categories could be grouped to Schwartz´s four higher-order categories: openness to change, self-enhancement, continuity (conservation), and self-transcendence, and t
 
-``` {r Mot}
+There has also been a recent effort of theory based standardization of citizen science volunteer motivations, in order to effectively manage them. (Levontin e al., 2022) introduced a framework of 15 motivational categories rooted in Schwartz's theory as well as categories devised to specially account for unique and important motivations in citizen science, such as "help with research" and "teaching," that are not explicitly measured in measures used earlier like the VFI (Volunteer Functions Inventory). 2 further categories were added for directly relevant to the MA project based on earlier inquiry into motivation of participants, regarding dislike of Mosquitoes, and noticing an increase or change in Mosquitoes in their surroundings.
 
+To test the identified differences in motivations users were asked rate the importance of reasons  for your participation in Mosquito Alert (with 1 being the lowest score and 5 being the highest score)
+
+I extracted the average ratings given by survey participants and plotted them for ease of reading
+
+```{r Mot}
+STM_columns <- Raw_Data %>% select(Self_Direction:Env_Change)
+
+STM_averages <- STM_columns %>%
+  summarise_all(~ mean(., na.rm = TRUE)) %>%
+  gather(key = "Variable", value = "Average") %>%
+  arrange(desc(Average))
+
+ggplot(STM_averages, aes(x = reorder(Variable, Average), y = Average)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +  
+  theme_minimal() +
+  labs(x = "Motivator", y = "Average") +
+  geom_text(aes(label = round(Average, 2)), hjust = -0.2, size = 3) +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
