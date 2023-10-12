@@ -141,6 +141,7 @@ mean(Data$Age, na.rm = TRUE)
 
 ggplot(Data, aes(x = Age_Group)) +
   geom_bar(fill = 'blue') +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +
   labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
   theme_minimal() +
   theme(axis.text.y = element_text(angle = 0, hjust = 1))
@@ -199,7 +200,7 @@ Participants indicated their agreement (1 = Totally disagree, 7 = Totally agree)
 
 Consistent with previous research and for ease of interpretation of results (e.g., Higgins et al., 2001; Rodrigues, Lopes, & Kumashiro, 2017), we computed an index of RF by subtracting prevention from promotion scores.
 
-The mean score of all participants was -1.4311
+The mean score of all participants was **-1.4311**
 
 ```{r RF}
 mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
