@@ -52,6 +52,8 @@ str(Raw_Data)
 #modifying Column type ···might be already a date
 Raw_Data <- Raw_Data %>% mutate(Participation_Date = as.factor(Participation_Date))
 Raw_Data <- Raw_Data %>%  mutate(Participation_Date = ymd(substr(Participation_Date, 1, 10)))
+
+
 Raw_Data <- Raw_Data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
 
 
@@ -90,7 +92,15 @@ Raw_Data <- Raw_Data %>%
 #creating an average individual Reg Focus
 Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
 
-str(Data)
+#rearranging
+Raw_Data <- Raw_Data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+                                Age_Group, Gender, Country, Participation_Date, Network, 
+                                Other_Citi_Sci, Self_Direction, Stimulation, Hedonism, 
+                                Achievement, Face, Security, Conformity, Benevolence, 
+                                Universalism_Social, Universalism_Nature, Routine, 
+                                Social_Expansion, Power, Help_Science, Teaching, Resentment, 
+                                Env_Change, Reg_Orientation, Prom_1, Prom_2, Prom_3, Prom_4, 
+                                Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5 )
 
 #data cleaning and Exploration
 
