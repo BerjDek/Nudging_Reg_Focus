@@ -1,42 +1,54 @@
+library(tidyverse)
 library(lubridate)
 
 
 #load message Data
-message_data_raw <- read.csv(file="all_messages.csv", header = TRUE)
+raw_message_data <- read.csv(file="all_messages.csv", header = TRUE)
 #seperate notifacation column to type language and msg_nmbr
-message_data_raw <- message_data_raw %>% separate(notification_label, c('type','language','msg_nmbr'))
+raw_message_data <- raw_message_data %>% separate(notification_label, c('type','language','msg_nmbr'))
 #change the message date to simple date
-message_data_raw <- message_data_raw %>% 
-    rename(User_ID = user_uuid, Msg_Date = date_sent, Msg_Lang = language) %>% 
-    mutate(
-    msg_nmbr = as.integer(msg_nmbr),
-    Msg_Date = as.POSIXct(Msg_Date, format = "%Y-%m-%d %H:%M:%S")
+raw_message_data <- raw_message_data %>% 
+  rename(User_ID = user_uuid, Msg_Date = date_sent, Msg_Lang = language) %>% 
+  mutate(Msg_Nmbr = as.integer(msg_nmbr),
+         Msg_Date = as.POSIXct(Msg_Date, format = "%Y-%m-%d %H:%M:%S"),
+         Year = format(Msg_Date, "%Y")) %>%
+  group_by(User_ID) %>%
+  mutate(Repeat_User = n_distinct(Year) > 1) %>%
+  ungroup() %>%
+  select(-Year)
 
 #first the data for messages were loaded into a data set called message_data_raw, the notification label was split in order to have 
-#sepearate columns for type, language and message number, column names changed to fit the style chosen for the survey data, and then 
-#The types of message number column and message date column fixed to integer and date format
+#separate columns for type, language and message number, column names changed to fit the style chosen for the survey data, and then 
+#The types of message number column and message date column fixed to integer and date format. #To see if user has participated in
+#survey/experiment in both years Repeat user column is created by checking distinct years of messages sent
+
+
+#To clean the data for use and joining with survey data, messages are filtered to those sent in 2023, and grouped by user ID.
+#extra columns are created to check period of messaging, number of total messages sent and read, and finally the number of the repeated message.
+
+#In the case of users that received a repeated message, all those that got their first message before the 5th of July 2023, had a repeat of the 
+#message they received on 30th of June on the 2nd of July, a date on which an invite should have been sent but instead a nudging message was sent.
+#However this shouldn't impact the results, as due to random distribution each type of messaging has 38 participants receiving a repeated message.
 
 
 
-message_data <- message_data_raw %>%
-  mutate(
-    msg_nmbr = as.integer(msg_nmbr),
-    Msg_Date = as.POSIXct(Msg_Date, format = "%Y-%m-%d %H:%M:%S")
-  ) %>%
+message_data <- raw_message_data %>%
+  filter(year(Msg_Date) == 2023) %>% 
   group_by(User_ID) %>%
-  mutate(Repeat_User = n_distinct(year(Msg_Date)) > 1) %>%
-  filter(year(Msg_Date) == 2023) %>%
   summarize(
-    type = first(type),
-    Repeat_User = Repeat_User,
-    language = first(Msg_Lang),
-    date_first_msg = format(min(Msg_Date[msg_nmbr == 1]), "%d/%m/%Y"),
-    date_last_msg = format(max(Msg_Date[msg_nmbr == max(msg_nmbr)]), "%d/%m/%Y"),
-    sent_messages = n(),
-    seen_messages = sum(read_notification == "t"),
-    repeated_message_number = if (anyDuplicated(msg_nmbr) > 0) msg_nmbr[duplicated(msg_nmbr)] else NA
+    Msg_Type = first(type),
+    Repeat_User = first(Repeat_User),
+    Msg_Lang = first(Msg_Lang),
+    First_Msg_Date = format(min(Msg_Date[msg_nmbr == 1]), "%Y-%m-%d"),
+    Last_Msg_Date = format(max(Msg_Date[msg_nmbr == max(msg_nmbr)]), "%Y-%m-%d"),
+    Nmbr_Msgs_Sent = n(),
+    Nmbr_Msgs_Seen = sum(read_notification == "t"),
+    Repeated_Msg_Nmbr = if (anyDuplicated(msg_nmbr) > 0) msg_nmbr[duplicated(msg_nmbr)] else NA
   ) %>%
   ungroup()
 
 
-count(message_data%>%distinct(User_ID))
+#The final count of users are 237 users that received messages, with 79 participants in each group
+
+
+
