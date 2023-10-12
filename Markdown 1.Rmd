@@ -21,10 +21,10 @@ Data was Downloaded as CSV from LimeSurvey,and loaded to R and column names have
 
 
 ```{r upload, echo = FALSE}
-Raw_Data <- read.csv("Results.csv")
+raw_survey_data <- read.csv("Results.csv")
 
 
-Raw_Data <- Raw_Data %>% rename( Language = Start.language,
+raw_survey_data <- raw_survey_data %>% rename( Language = Start.language,
                                                Consent = I.GIVE.MY.CONSENT.to.participate.in.this.study.and.allow.the.use.of.data.generated.in.Mosquito.Alert.on.my.device.to.be.re.used.in.this.research.project..,
                                                User_ID = user_UUID,
                                                Age = How.old.are.you.,
@@ -60,7 +60,7 @@ Raw_Data <- Raw_Data %>% rename( Language = Start.language,
                                                Prom_4 = I.like.trying.out.lots.of.different.things..and.am.often.successful.in.doing.so.,
                                                Prom_5 = It.is.important.to.me.that.my.achievements.are.recognized.and.valued.by.other.people.,
                                                Prev_5 = I.often.think.about.what.other.people.expect.of.me.)
-colnames(Raw_Data)
+colnames(raw_survey_data)
 
 ```
 
@@ -68,11 +68,11 @@ colnames(Raw_Data)
 
 - Non responses to Country have been converted to "prefer not to say"
 - Responses to Reg Focus questions converted to Numerals
-
+-"target=" which was appearing at the end of some uuid's removed
 ```{r conversion, echo=FALSE}
-Raw_Data <- Raw_Data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
-
-Raw_Data <- Raw_Data %>%
+raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
+raw_survey_data$User_ID <- sub(" target=", "", raw_survey_data$User_ID) 
+raw_survey_data <- raw_survey_data %>%
   mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
 ```
 
@@ -83,7 +83,7 @@ Raw_Data <- Raw_Data %>%
 - Removed Redundant Columns like Seed and Date Submitted
 
 ```{r adding new columns}
-Raw_Data <- Raw_Data %>%
+raw_survey_data <- raw_survey_data %>%
   mutate(Age_Group = case_when(
     Age >= 18 & Age <= 25 ~ '18-25',
     Age >= 26 & Age <= 35 ~ '26-35',
@@ -94,11 +94,11 @@ Raw_Data <- Raw_Data %>%
     TRUE ~ 'Unknown'  
   ))
 
-Raw_Data <- Raw_Data %>% 
+raw_survey_data <- raw_survey_data %>% 
   mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2 
                             - Prev_3- Prev_4- Prev_5))
 
-Raw_Data <- Raw_Data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+raw_survey_data <- raw_survey_data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
                                 Age_Group, Gender, Country, Participation_Date, Network, 
                                 Other_Citi_Sci, Self_Direction, Stimulation, Hedonism, 
                                 Achievment, Face, Security, Conformity, Benevolence, 
@@ -107,7 +107,7 @@ Raw_Data <- Raw_Data %>% select(Response.ID, Last.page, Language, Consent, User_
                                 Env_Change, Reg_Orientation, Prom_1, Prom_2, Prom_3, Prom_4, 
                                 Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5 )
 
-colnames(Raw_Data)
+colnames(raw_survey_data)
 ```
 
 
@@ -121,13 +121,13 @@ did not have a UUID (probably team members that received the link or something w
 The total number of users from total that have clicked on the link and have provided consent and ID making them eligible for the messaging experiment is **258** of which **224** have provided information on their reg focus as well..
 
 ```{r filtering rows, echo=FALSE, results='hide'}
-Data <- Raw_Data %>%
+survey_data <- raw_survey_data %>%
   filter(Last.page  == 5 & Consent == "Yes")
 
 
-nrow(Raw_Data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
+nrow(raw_survey_data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
 
-nrow(Raw_Data %>% filter(Consent == "Yes", nzchar(User_ID)))
+nrow(raw_survey_data %>% filter(Consent == "Yes", nzchar(User_ID)))
 ```
 
 
@@ -137,9 +137,9 @@ The average age of survey participants was **48.7**
 The distribution was similar to earlier studies with the large majority of participants being between **35-64** 
 
 ```{r age, results='hide'}
-mean(Data$Age, na.rm = TRUE) 
+mean(survey_data$Age, na.rm = TRUE) 
 
-ggplot(Data, aes(x = Age_Group)) +
+ggplot(survey_data, aes(x = Age_Group)) +
   geom_bar(fill = 'blue') +
   geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +
   labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
@@ -152,7 +152,7 @@ ggplot(Data, aes(x = Age_Group)) +
 **128** males to **93** females, **3** non-binary, **1** transgender, and **3** prefer not to say 
 
 ```{r gender}
-gender_dist <- Data %>%
+gender_dist <- survey_data %>%
   group_by(Gender) %>%
   summarize(Frequency = n()) %>%
   arrange(desc(Frequency))  
@@ -170,7 +170,7 @@ ggplot(gender_dist, aes(x = reorder(Gender, -Frequency), y = Frequency)) +
 Majority of participates were from Spain(107) and Italy (81) with Netherlanders coming in 3rd (22)
 
 ```{r country}
-Country_dist <- Data %>%
+Country_dist <- survey_data %>%
   group_by(Country) %>%
   summarize(Frequency = n()) %>%
   arrange(desc(Frequency))
@@ -203,7 +203,7 @@ Consistent with previous research and for ease of interpretation of results (e.g
 The mean score of all participants was **-1.4311**
 
 ```{r RF}
-mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
+mean(survey_data$Reg_Orientation, na.rm = TRUE)
 ```
 
 
@@ -216,7 +216,7 @@ To test the identified differences in motivations users were asked rate the impo
 I extracted the average ratings given by survey participants and plotted them for ease of reading
 
 ```{r Mot}
-STM_columns <- Raw_Data %>% select(Self_Direction:Env_Change)
+STM_columns <- raw_survey_data %>% select(Self_Direction:Env_Change)
 
 STM_averages <- STM_columns %>%
   summarise_all(~ mean(., na.rm = TRUE)) %>%

@@ -5,11 +5,11 @@ library(tidyverse)
 
 #loading Data
 
-Raw_Data <- read.csv("Results.csv")
+raw_survey_data <- read.csv("Results.csv")
 
-colnames(Raw_Data)
+colnames(raw_survey_data)
 
-Raw_Data <- Raw_Data %>% rename( Language = Start.language,
+raw_survey_data <- raw_survey_data %>% rename( Language = Start.language,
                                                Consent = I.GIVE.MY.CONSENT.to.participate.in.this.study.and.allow.the.use.of.data.generated.in.Mosquito.Alert.on.my.device.to.be.re.used.in.this.research.project..,
                                                User_ID = user_UUID,
                                                Age = How.old.are.you.,
@@ -47,19 +47,19 @@ Raw_Data <- Raw_Data %>% rename( Language = Start.language,
                                                Prev_5 = I.often.think.about.what.other.people.expect.of.me.)
 
 
-str(Raw_Data)
+
 
 #modifying Column type ···might be already a date
-Raw_Data <- Raw_Data %>% mutate(Participation_Date = as.factor(Participation_Date))
-Raw_Data <- Raw_Data %>%  mutate(Participation_Date = ymd(substr(Participation_Date, 1, 10)))
+raw_survey_data <- raw_survey_data %>% mutate(Participation_Date = as.factor(Participation_Date))
+raw_survey_data <- raw_survey_data %>%  mutate(Participation_Date = ymd(substr(Participation_Date, 1, 10)))
 
 
-Raw_Data <- Raw_Data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
+raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
 
-
+raw_survey_data$User_ID <- sub(" target=", "", raw_survey_data$User_ID) #removed target= which was appearing at the end of some uuid's
 
 #turning the Reg Focus Responses to Numeral
-Raw_Data <- Raw_Data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
+raw_survey_data <- raw_survey_data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
                                               Prom_2 = as.numeric(str_extract(Prom_2, "\\d+")),
                                               Prom_3 = as.numeric(str_extract(Prom_3, "\\d+")),
                                               Prom_4 = as.numeric(str_extract(Prom_4, "\\d+")),
@@ -70,13 +70,13 @@ Raw_Data <- Raw_Data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+"))
                                               Prev_4 = as.numeric(str_extract(Prev_4, "\\d+")),
                                               Prev_5 = as.numeric(str_extract(Prev_5, "\\d+")))
 
-Raw_Data <- Raw_Data %>%
+raw_survey_data <- raw_survey_data %>%
   mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
 
 
 
 #creating age groups
-Raw_Data <- Raw_Data %>%
+raw_survey_data <- raw_survey_data %>%
   mutate(Age_Group = case_when(
     Age >= 18 & Age <= 25 ~ '18-25',
     Age >= 26 & Age <= 35 ~ '26-35',
@@ -90,10 +90,10 @@ Raw_Data <- Raw_Data %>%
 
 
 #creating an average individual Reg Focus
-Raw_Data <- Raw_Data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
+raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
 
 #rearranging
-Raw_Data <- Raw_Data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+raw_survey_data <- raw_survey_data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
                                 Age_Group, Gender, Country, Participation_Date, Network, 
                                 Other_Citi_Sci, Self_Direction, Stimulation, Hedonism, 
                                 Achievement, Face, Security, Conformity, Benevolence, 
@@ -106,13 +106,13 @@ Raw_Data <- Raw_Data %>% select(Response.ID, Last.page, Language, Consent, User_
 
 #filtering to those who consented and completed the survey.
 
-Data <- Raw_Data %>%
+survey_data <- raw_survey_data %>%
   filter(Last.page  == 5 & Consent == "Yes")
 
 
-nrow(Raw_Data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
+nrow(raw_survey_data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
 
-nrow(Raw_Data %>% filter(Consent == "Yes", nzchar(User_ID)))
+nrow(raw_survey_data %>% filter(Consent == "Yes", nzchar(User_ID)))
 
 #from the original 450 Observers there are 227 that have completed the entire survey, and whose entries will be analyzed. 3 of them 
 #did not have a UUID (probably team members that received the link or something went off in their app). The total number of users that have
@@ -124,17 +124,17 @@ nrow(Raw_Data %>% filter(Consent == "Yes", nzchar(User_ID)))
 
 #Exploring the age of Participants
 
-mean(Data$Age, na.rm = TRUE) # average age is 48.72687
+mean(survey_data$Age, na.rm = TRUE) # average age is 48.72687
 
 
-ggplot(Data, aes(x = Age_Group)) +
+ggplot(survey_data, aes(x = Age_Group)) +
   geom_bar(fill = 'blue') +
   labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
   theme_minimal() +
   theme(axis.text.y = element_text(angle = 0, hjust = 1))
 
 # Gender Distribution
-gender_dist <- Data %>%
+gender_dist <- survey_data %>%
   group_by(Gender) %>%
   summarize(Frequency = n()) %>%
   arrange(desc(Frequency))  #128 males to 93 females 
@@ -149,7 +149,7 @@ ggplot(gender_dist, aes(x = reorder(Gender, -Frequency), y = Frequency)) +
         legend.position = "none")
 
 # country distribution
-Country_dist <- Data %>%
+Country_dist <- survey_data %>%
   group_by(Country) %>%
   summarize(Frequency = n()) %>%
   arrange(desc(Frequency))
@@ -166,7 +166,7 @@ ggplot(Country_dist, aes(x = reorder(Country, -Frequency), y = Frequency)) +
 
 
 # start date for participation
-Start_dist <- Data %>%
+Start_dist <- survey_data %>%
   group_by(Participation_Date) %>%
   summarize(Frequency = n()) %>%
   arrange(desc(Frequency))
@@ -184,7 +184,7 @@ ggplot(Start_dist, aes(x = reorder(Participation_Date, -Frequency), y = Frequenc
 
 # Network & other citisci
 
-Network_dist <- Data %>%
+Network_dist <- survey_data %>%
   group_by(Network) %>%
   summarize(Frequency = n()) %>%
   arrange(desc(Network))
@@ -201,14 +201,14 @@ ggplot(Network_dist, aes(x = Network, y = Frequency)) +
 #Most of the users don't know anyone else that is using the app.
 
 #checking the average Regulatory Focus
-mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
+mean(raw_survey_data$Reg_Orientation, na.rm = TRUE)
 
 
 
 #before creating higher level orders lets see the various levels of each motivator.
 
 
-STM_columns <- Raw_Data %>% select(Self_Direction:Env_Change)
+STM_columns <- raw_survey_data %>% select(Self_Direction:Env_Change)
 
 STM_averages <- STM_columns %>%
   summarise_all(~ mean(., na.rm = TRUE)) %>%
@@ -232,22 +232,22 @@ ggplot(STM_averages, aes(x = reorder(Variable, Average), y = Average)) +
 
 #creating 4 high-order values of Schwartz
 
-#Raw_Data <- Raw_Data %>%  mutate(Open_To_Change = (Self_Direction + Stimulation + Hedonism + Social_Expansion)/4) %>% mutate(Self_Enhancement = (Achievment + Power + Face)/3) %>% mutate(Cotinuity = (Security + Conformity + Routine)/3) %>% mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence + Help_Science)/4 )
+#raw_survey_data <- raw_survey_data %>%  mutate(Open_To_Change = (Self_Direction + Stimulation + Hedonism + Social_Expansion)/4) %>% mutate(Self_Enhancement = (Achievment + Power + Face)/3) %>% mutate(Cotinuity = (Security + Conformity + Routine)/3) %>% mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence + Help_Science)/4 )
                                  
   
 
-Raw_Data <- Raw_Data %>%
+raw_survey_data <- raw_survey_data %>%
   mutate(Open_To_Change = (Achievement + Power + Hedonism)/3) %>%
   mutate(Self_Enhancement = (Self_Direction + Stimulation + face) %>%
   mutate(Continuity = (Security + Conformity)/3) %>%
   mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolenc+ Help_Science)/4)                                 
 
-mean(Raw_Data$Reg_Orientation, na.rm = TRUE)
-Raw_Data <- Raw_Data %>% mean(
+mean(raw_survey_data$Reg_Orientation, na.rm = TRUE)
+raw_survey_data <- raw_survey_data %>% mean(
 
  Routine, help with research/ contriute to science, social expansion, motivation to teach
 
-Data <- Raw_Data %>% filter(Last.page == 5)
+survey_data <- raw_survey_data %>% filter(Last.page == 5)
 
 
-summary(Data)
+summary(survey_data)
