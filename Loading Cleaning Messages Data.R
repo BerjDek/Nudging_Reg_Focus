@@ -39,8 +39,8 @@ message_data <- raw_message_data %>%
     Msg_Type = first(type),
     Repeat_User = first(Repeat_User),
     Msg_Lang = first(Msg_Lang),
-    First_Msg_Date = format(min(Msg_Date[msg_nmbr == 1]), "%Y-%m-%d"),
-    Last_Msg_Date = format(max(Msg_Date[msg_nmbr == max(msg_nmbr)]), "%Y-%m-%d"),
+    First_Msg_Date = as.POSIXct(format(min(Msg_Date[msg_nmbr == 1]), "%Y-%m-%d")),
+    Last_Msg_Date = as.POSIXct(format(max(Msg_Date[msg_nmbr == max(msg_nmbr)]), "%Y-%m-%d")),
     Nmbr_Msgs_Sent = n(),
     Nmbr_Msgs_Seen = sum(read_notification == "t"),
     Repeated_Msg_Nmbr = if (anyDuplicated(msg_nmbr) > 0) msg_nmbr[duplicated(msg_nmbr)] else NA
