@@ -24,3 +24,4 @@ reports_data <- reports_data %>%
     Total_Site_Rprts_Filled = sum(Rprt_Type == "site")
   ) %>%
   ungroup()
+  
