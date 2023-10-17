@@ -48,7 +48,7 @@ raw_survey_data <- raw_survey_data %>% rename( Language = Start.language,
                                                Power =On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.gain.recognition.,
                                                Help_Science = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.contribute.to.science.,
                                                Teaching = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.use.it.to.teach.others.about.the.topic.,
-                                               Resentment = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.dislike.mosquitos..,
+                                               Disklike = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.dislike.mosquitos..,
                                                Env_Change = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.noticed.an.increase.or.change.in.mosquitos.in.my.surroundings.,
                                                Prom_1 = I.prefer.to.work.without.instructions.from.others.,
                                                Prev_1 = Rules.and.regulations.are.helpful.and.necessary.for.me,
@@ -100,12 +100,13 @@ raw_survey_data <- raw_survey_data %>%
 
 raw_survey_data <- raw_survey_data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
                                 Age_Group, Gender, Country, Participation_Date, Network, 
-                                Other_Citi_Sci, Self_Direction, Stimulation, Hedonism, 
-                                Achievment, Face, Security, Conformity, Benevolence, 
+                                Other_Citi_Sci, Reg_Orientation, Openness_To_Change, Self_Enhancement,
+                                Continuity, Self_Transcendence, Security, Teaching, Self_Direction, 
+                                Stimulation, Hedonism, Achievement, Face, Conformity, Benevolence, 
                                 Universalism_Social, Universalism_Nature, Routine, 
-                                Social_Expansion, Power, Help_Science, Teaching, Resentment, 
-                                Env_Change, Reg_Orientation, Prom_1, Prom_2, Prom_3, Prom_4, 
-                                Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5 )
+                                Social_Expansion, Power, Help_Science,Dislike, 
+                                Env_Change, Prom_1, Prom_2, Prom_3, Prom_4, 
+                                Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5)
 
 colnames(raw_survey_data)
 ```
@@ -216,7 +217,7 @@ To test the identified differences in motivations users were asked rate the impo
 I extracted the average ratings given by survey participants and plotted them for ease of reading
 
 ```{r Mot}
-STM_columns <- raw_survey_data %>% select(Self_Direction:Env_Change)
+STM_columns <- raw_survey_data %>% select(Security:Env_Change)
 
 STM_averages <- STM_columns %>%
   summarise_all(~ mean(., na.rm = TRUE)) %>%
