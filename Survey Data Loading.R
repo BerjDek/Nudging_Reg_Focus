@@ -113,18 +113,19 @@ raw_survey_data <- raw_survey_data %>% select(Response.ID, Last.page, Language, 
 
 #data cleaning and Exploration
 
-#filtering to those who consented and completed the survey.
+#filtering to those who consented and completed the survey, and their UUID has been registered.
 
 survey_data <- raw_survey_data %>%
   filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID))
 
+#removed the entries by users that have filled the survey twice, maintaining the results of their first attempt and deleting repeats.
 survey_data <- survey_data %>%
   group_by(User_ID) %>%
   filter(row_number() == 1) %>%
   ungroup()
 
 
-
+## dont mention it unless you want to mention that there are 227 consents but 3 no uuids and the 7 repetitions
 nrow(raw_survey_data %>% filter(Consent == "Yes", nzchar(User_ID))%>%
   group_by(User_ID) %>%
   filter(row_number() == 1) %>%
