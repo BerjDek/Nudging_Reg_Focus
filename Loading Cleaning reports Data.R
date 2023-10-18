@@ -4,6 +4,7 @@ raw_reports_data <- read.csv(file="all_reports.csv", header = TRUE) %>%
 
 
 #creation of reports data to stick to  main data set from Survey
+#Since 12/09/2020 till the date of the analysis 11,799 reports have been filled.
 
 reports_data <- raw_reports_data %>%
   select(user_id, location_choice, creation_time, type) %>% 
@@ -16,7 +17,7 @@ reports_data <- raw_reports_data %>%
 
 
 
-#Checking the seasonality of reports filled.
+#Checking the seasonality of reports filled. #Seems the season usually runs from the first of June til Mid October
 
 reports_data %>%
   filter(year(Rprt_Date) == 2022) %>%
@@ -29,17 +30,14 @@ reports_data %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#adding columns based on earlier graph it seems the season runs from early june til mid of october
 
-reports_data <- reports_data %>%
+
+
+reports_data_summary <- reports_data %>%
   group_by(User_ID) %>%
-  mutate(
-    Total_Rprts_Filled = n(),
-    Season_Rprts_Filled = sum(Rprt_Date >= "2023-06-01" & Rprt_Date <= "2023-10-15"),
-    Rprts_Filled_2023 = sum(Rprt_Date >= "2023-01-01"),
-    Total_Bite_Rprts_Filled = sum(Rprt_Type == "bite"),
-    Total_Adult_Rprts_Filled = sum(Rprt_Type == "adult"),
-    Total_Site_Rprts_Filled = sum(Rprt_Type == "site")
-  ) %>%
+  summarize(total_reports = n(),
+            bite_reports = sum(Rprt_Type == "bite", na.rm = TRUE),
+            adult_reports = sum(Rprt_Type == "adult", na.rm = TRUE),
+            site_reports = sum(Rprt_Type == "site", na.rm = TRUE)) %>% 
   ungroup()
   
