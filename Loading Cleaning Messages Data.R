@@ -45,7 +45,8 @@ message_data <- raw_message_data %>%
     Nmbr_Msgs_Seen = sum(read_notification == "t"),
     Repeated_Msg_Nmbr = if (anyDuplicated(msg_nmbr) > 0) msg_nmbr[duplicated(msg_nmbr)] else NA
   ) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(Msg_Type = as.factor(Msg_Type))
 
 
 #The final count of users are 237 users that received messages, with 79 participants in each group

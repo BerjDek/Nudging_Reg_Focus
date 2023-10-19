@@ -1,6 +1,6 @@
-rm(test,test2,test3)
+rm(Data_Tall, data_Tall, model,  test,test2,test1)
 str(reports_data)
-str(test2)
+str(data)
 str(message_data)
 str(UUID_Consent)
 str(survey_data)
@@ -27,7 +27,7 @@ message_data_join <- message_data %>%
          Last_Msg_Date,Nmbr_Msgs_Sent, Nmbr_Msgs_Seen)
 
 survey_data_join <- survey_data %>% 
-  select(User_ID, Age, Age_Group, Gender, Country, Participation_Date,
+  select(User_ID, Complt_Survey,Age, Age_Group, Gender, Country, Participation_Date,
          Network, Other_Citi_Sci, Reg_Orientation, Openness_To_Change,
          Self_Enhancement, Continuity, Self_Transcendence, Security,
          Teaching, Self_Direction, Stimulation, Hedonism, Achievement,
@@ -35,16 +35,19 @@ survey_data_join <- survey_data %>%
          Routine, Social_Expansion, Power, Help_Science, Dislike, Env_Change)
 
 
-test <- left_join(reports_data, message_data_join,  by = "User_ID") 
-test <- left_join(test, survey_data_join,  by = "User_ID") 
+data_tall <- left_join(reports_data, message_data_join,  by = "User_ID") 
+data_tall <- left_join(data_tall, survey_data_join,  by = "User_ID") 
 
 rm(message_data_join, survey_data_join)
+
+
+
+
 
 #joined the messages data to the reports data set, for now maintained reports from all years, 
 #will try to create new variables based on messaging periods
 
-
-test <- test %>%
+data_tall <- data_tall %>%
   group_by(User_ID) %>%
            mutate(Got_Msgs = !is.na(First_Msg_Date),
                   Total_Rprts_Filled = n(),
@@ -56,24 +59,39 @@ test <- test %>%
                   Rprts_During_Msging = sum(Rprt_Date >= First_Msg_Date & Rprt_Date <= Last_Msg_Date, na.rm = TRUE),
                   Rprts_Before_Msging = sum(Rprt_Date >= (First_Msg_Date - days(45)) & Rprt_Date < First_Msg_Date, na.rm = TRUE),
                   Rprts_After_Msging = sum(Rprt_Date > Last_Msg_Date & Rprt_Date <= (Last_Msg_Date + days(45)), na.rm = TRUE)) %>%
-            mutate( Msg_Type = ifelse(is.na(Msg_Type), "Non", Msg_Type),
-                    Nmbr_Msgs_Sent = ifelse(is.na(Nmbr_Msgs_Sent), 0, Nmbr_Msgs_Sent),
-                    Nmbr_Msgs_Seen = ifelse(is.na(Nmbr_Msgs_Seen), 0, Nmbr_Msgs_Seen)
-                   )
+           mutate(Msg_Type = ifelse(is.na(Msg_Type), "Non", Msg_Type),
+                  Repeat_User  = ifelse(is.na(Repeat_User), FALSE, Repeat_User),
+                  Nmbr_Msgs_Sent = ifelse(is.na(Nmbr_Msgs_Sent), 0, Nmbr_Msgs_Sent),
+                  Nmbr_Msgs_Seen = ifelse(is.na(Nmbr_Msgs_Seen), 0, Nmbr_Msgs_Seen)) %>% 
            ungroup()
 
 
-test2 <- test %>%
+
+
+
+
+data <- data_tall %>%
   group_by(User_ID) %>%
     mutate(Rprt_Loc_Choice = names(which.max(table(Rprt_Loc_Choice)))) %>% # Find the most frequent Rprt_Loc_Choice
       arrange(User_ID, Rprt_Date) %>% # Arrange by date to ensure first occurrence is taken
         select(-Rprt_Date, -Rprt_Type) %>% # Remove unwanted columns
           slice(1L) %>% # Take the first occurrence for each user
-  ungroup() 
-you 
-                  
-                  
-                 
+  ungroup() %>%
+  mutate(Rprt_Loc_Choice = as.factor(Rprt_Loc_Choice))
+
+
+
+#minor adjustments of columns  
+
+data$Got_Msgs <- as.factor(data$Got_Msgs)
+data_tall$                
+
+
+
+
+
+model <- lm(Season_Rprts_Filled ~ Got_Msgs + Msg_Type + Nmbr_Msgs_Seen, data = test2)                 
+summary(model)                 
                   
                   
    

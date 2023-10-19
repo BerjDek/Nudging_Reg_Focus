@@ -95,22 +95,26 @@ raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+P
 #Creating 4 higher level orders from CSMS of Levontin et.al
 
 raw_survey_data <- raw_survey_data %>%
-  mutate(Openness_To_Change = (Self_Direction + Stimulation + Social_Expansion+Hedonism)/4) %>%
-  mutate(Self_Enhancement = (Achievement + Power + Face)/3) %>%
-  mutate(Continuity = (Routine + Conformity)/2) %>%
-  mutate(Self_Transcendence = (Universalism_Social + Universalism_Nature + Benevolence+ Help_Science)/4)  
+  mutate(Openness_To_Change = round((Self_Direction + Stimulation + Social_Expansion+Hedonism)/4,2)) %>%
+  mutate(Self_Enhancement = round((Achievement + Power + Face)/3,2)) %>%
+  mutate(Continuity = round((Routine + Conformity)/2,2)) %>%
+  mutate(Self_Transcendence = round((Universalism_Social + Universalism_Nature + Benevolence+ Help_Science)/4,2))  
 
 #rearranging 
-raw_survey_data <- raw_survey_data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
-                                Age_Group, Gender, Country, Participation_Date, Network, 
-                                Other_Citi_Sci, Reg_Orientation, Openness_To_Change, Self_Enhancement,
-                                Continuity, Self_Transcendence, Security, Teaching, Self_Direction, 
-                                Stimulation, Hedonism, Achievement, Face, Conformity, Benevolence, 
-                                Universalism_Social, Universalism_Nature, Routine, 
-                                Social_Expansion, Power, Help_Science,Dislike, 
-                                Env_Change, Prom_1, Prom_2, Prom_3, Prom_4, 
-                                Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5)
-
+raw_survey_data <- raw_survey_data %>% 
+  select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+         Age_Group, Gender, Country, Participation_Date, Network, 
+         Other_Citi_Sci, Reg_Orientation, Openness_To_Change, Self_Enhancement,
+         Continuity, Self_Transcendence, Security, Teaching, Self_Direction, 
+         Stimulation, Hedonism, Achievement, Face, Conformity, Benevolence, 
+         Universalism_Social, Universalism_Nature, Routine, 
+         Social_Expansion, Power, Help_Science,Dislike, 
+         Env_Change, Prom_1, Prom_2, Prom_3, Prom_4, 
+         Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5) %>% 
+  mutate( Age_Group = as.factor(Age_Group),
+          Gender = as.factor(Gender),
+          Country = as.factor(Country))
+                                        
 #data cleaning and Exploration
 
 #filtering to those who consented and completed the survey, and their UUID has been registered.
@@ -122,6 +126,7 @@ survey_data <- raw_survey_data %>%
 survey_data <- survey_data %>%
   group_by(User_ID) %>%
   filter(row_number() == 1) %>%
+  mutate(Complt_Survey = TRUE) %>% 
   ungroup()
 
 
