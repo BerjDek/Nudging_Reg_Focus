@@ -120,7 +120,7 @@ raw_survey_data <- raw_survey_data %>%
 #filtering to those who consented and completed the survey, and their UUID has been registered.
 
 survey_data <- raw_survey_data %>%
-  filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID))
+  filter(Last.page  == 5 & Consent == "Yes" & nzchar(User_ID) > 0)
 
 #removed the entries by users that have filled the survey twice, maintaining the results of their first attempt and deleting repeats.
 survey_data <- survey_data %>%
@@ -130,13 +130,14 @@ survey_data <- survey_data %>%
   ungroup()
 
 
-## dont mention it unless you want to mention that there are 227 consents but 3 no uuids and the 7 repetitions
-nrow(raw_survey_data %>% filter(Consent == "Yes", nzchar(User_ID))%>%
+
+nrow(raw_survey_data %>% filter(Consent == "Yes" & nzchar(User_ID))%>%
   group_by(User_ID) %>%
   filter(row_number() == 1) %>%
   ungroup())
 
 
+## There are 237 consents that that have provided User Id's, after removing 7 that have done the survey twice. 
 
 #from the original 450 Observers there are 217 that have completed the entire survey, and provided their 
 #User IDs and whose entries will be analyzed. The total number of users that have provided consent and ID, 

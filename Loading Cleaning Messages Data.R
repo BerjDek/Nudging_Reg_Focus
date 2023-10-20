@@ -19,7 +19,7 @@ raw_message_data <- raw_message_data %>%
 
 #first the data for messages were loaded into a data set called message_data_raw, the notification label was split in order to have 
 #separate columns for type, language and message number, column names changed to fit the style chosen for the survey data, and then 
-#The types of message number column and message date column fixed to integer and date format. #To see if user has participated in
+#The types of message number column and message date column fixed to integer and date format. To see if user has participated in
 #survey/experiment in both years Repeat user column is created by checking distinct years of messages sent
 
 
@@ -49,7 +49,15 @@ message_data <- raw_message_data %>%
   mutate(Msg_Type = as.factor(Msg_Type))
 
 
-#The final count of users are 237 users that received messages, with 79 participants in each group
+#The final count of users are 237 users that received messages, with 79 participants in each group.
+#The number corresponds with the Unique users that have initiated the survey and gave their consent
 
+
+
+#just to check, downsizing the users to the ones that completed the whole survey, so to make sure they didnt just click consent and were later uninterested
+
+
+filtered_message_data <- message_data %>%
+  filter(User_ID %in% survey_data$User_ID)
 
 

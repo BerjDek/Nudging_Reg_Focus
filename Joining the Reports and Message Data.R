@@ -20,6 +20,16 @@ count(anti_join(survey_data, reports_data, by = c("User_ID" = "User_ID")))
 
 
 
+#check if all the users in   reports_data are in  data_tall
+all(reports_data$User_ID %in% data_tall$User_ID)
+#####IMPORTANT, you discovered that data tall did not take all the users from reports data.
+#on Monday change the way you merge the data sets, and check if all the reports are included in data set.
+
+#DECIDE if you are going to keep all reports, or clean by version level till one after the update. if you decide to cut by version, check date of first report.
+#merge user to report, to message to survey.
+
+
+
 #Selecting relevant columns from Message and survey reports to join with report data set to create one large data set to analyse
 
 message_data_join <- message_data %>% 
@@ -37,6 +47,8 @@ survey_data_join <- survey_data %>%
 
 data_tall <- left_join(reports_data, message_data_join,  by = "User_ID") 
 data_tall <- left_join(data_tall, survey_data_join,  by = "User_ID") 
+
+
 
 rm(message_data_join, survey_data_join)
 
