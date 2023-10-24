@@ -54,7 +54,7 @@ message_data <- raw_message_data %>%
 
 
 
-#just to check, downsizing the users to the ones that completed the whole survey, so to make sure they didnt just click consent and were later uninterested
+#just to check, downsizing the users to the ones that completed the whole survey, so to make sure they didn´t just click consent and were later uninterested
 
 
 filtered_message_data <- message_data %>%
