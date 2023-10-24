@@ -26,10 +26,10 @@ reports_data <- raw_reports_data %>%
 # The data set shows that  45,135 unique users have contributed to fill the  144,832 reports Since 12/10/2020
 reports_data_summary <- reports_data %>%
   group_by(User_ID) %>%
-  summarize(total_reports = n(),
-            bite_reports = sum(Rprt_Type == "bite", na.rm = TRUE),
-            adult_reports = sum(Rprt_Type == "adult", na.rm = TRUE),
-            site_reports = sum(Rprt_Type == "site", na.rm = TRUE)) %>% 
+  summarize(Total_Reports_Filled = n(),
+            Bite_Reports = sum(Rprt_Type == "bite", na.rm = TRUE),
+            Adult_Reports = sum(Rprt_Type == "adult", na.rm = TRUE),
+            Site_Reports = sum(Rprt_Type == "site", na.rm = TRUE)) %>% 
   ungroup()
 
 
