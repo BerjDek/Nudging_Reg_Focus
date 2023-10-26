@@ -1,4 +1,6 @@
 library(tidyverse)
+
+
 raw_reports_data <- read.csv(file="full_reports_table.csv", header = TRUE) %>% 
   mutate(creation_time= as.POSIXct(creation_time, format = "%Y-%m-%d"))
 
@@ -18,6 +20,13 @@ reports_data <- raw_reports_data %>%
          Rprt_Date = creation_time,
          Rprt_Type = type) %>% 
   filter(User_ID != "" & Rprt_Date >= as.POSIXct("2020-10-02"))
+
+reports_data <- reports_data %>% mutate(Rprt_Type = as.factor(Rprt_Type),
+                                        Rprt_Loc_Choice = as.factor(Rprt_Loc_Choice))
+
+min(reports_data$Rprt_Date, na.rm = TRUE)
+
+str(reports_data)
 
 #Since 12/10/2020 till the date of the analysis 144,832 reports have been filled.
 

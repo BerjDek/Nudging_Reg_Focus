@@ -49,10 +49,6 @@ raw_survey_data <- raw_survey_data %>% rename( Language = Start.language,
 
 
 
-#modifying Column type ···might be already a date
-raw_survey_data <- raw_survey_data %>% mutate(Participation_Date = as.factor(Participation_Date))
-raw_survey_data <- raw_survey_data %>%  mutate(Participation_Date = ymd(substr(Participation_Date, 1, 10)))
-
 
 raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
 
@@ -70,9 +66,17 @@ raw_survey_data <- raw_survey_data %>% mutate(Prom_1 = as.numeric(str_extract(Pr
                                               Prev_4 = as.numeric(str_extract(Prev_4, "\\d+")),
                                               Prev_5 = as.numeric(str_extract(Prev_5, "\\d+")))
 
+
 raw_survey_data <- raw_survey_data %>%
   mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
 
+raw_survey_data <- raw_survey_data %>% mutate(Network = as.numeric(Network))
+
+raw_survey_data <- raw_survey_data %>%  mutate(Participation_Date = as.factor(Participation_Date))
+
+# Converting Other_Citi_Sci to a binary variable
+raw_survey_data <- raw_survey_data %>%
+  mutate(Other_Citi_Sci = ifelse(Other_Citi_Sci == "Yes", 1, 0))
 
 
 #creating age groups
@@ -80,17 +84,28 @@ raw_survey_data <- raw_survey_data %>%
   mutate(Age_Group = case_when(
     Age >= 18 & Age <= 25 ~ '18-25',
     Age >= 26 & Age <= 35 ~ '26-35',
-    Age >= 36 & Age <= 45 ~ '36-45',
-    Age >= 46 & Age <= 55 ~ '46-55',
-    Age >= 56 & Age <= 65 ~ '56-65',
-    Age >= 66 ~ '66 and older',
+    Age >= 36 & Age <= 48 ~ '36-48',
+    Age >= 49 & Age <= 62 ~ '49-62',
+    Age >= 63 ~ '63 and older',
     TRUE ~ 'Unknown'  
   ))
 
-
+raw_survey_data <- raw_survey_data %>% mutate(Age_Group = as.factor(Age_Group))
 
 #creating an average individual Reg Focus
 raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
+
+
+# Adding categorical version of Reg_Orientation
+raw_survey_data <- raw_survey_data %>%
+  mutate(Reg_Orientation_Cat = case_when(
+    Reg_Orientation < 0 ~ "Prevention-oriented",
+    Reg_Orientation == 0 ~ "Neutral",
+    Reg_Orientation > 0 ~ "Promotion-oriented",
+    TRUE ~ as.character(NA)  # For NAs
+  ))
+raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation_Cat = as.factor(Reg_Orientation_Cat))
+
 
 #Creating 4 higher level orders from CSMS of Levontin et.al
 
@@ -104,13 +119,13 @@ raw_survey_data <- raw_survey_data %>%
 raw_survey_data <- raw_survey_data %>% 
   select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
          Age_Group, Gender, Country, Participation_Date, Network, 
-         Other_Citi_Sci, Reg_Orientation, Openness_To_Change, Self_Enhancement,
-         Continuity, Self_Transcendence, Security, Teaching, Self_Direction, 
-         Stimulation, Hedonism, Achievement, Face, Conformity, Benevolence, 
-         Universalism_Social, Universalism_Nature, Routine, 
-         Social_Expansion, Power, Help_Science,Dislike, 
-         Env_Change, Prom_1, Prom_2, Prom_3, Prom_4, 
-         Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5) %>% 
+         Other_Citi_Sci, Reg_Orientation,Reg_Orientation_Cat, 
+         Openness_To_Change, Self_Enhancement, Continuity, Self_Transcendence, 
+         Security, Teaching, Self_Direction, Stimulation, Hedonism, 
+         Achievement, Face, Conformity, Benevolence, Universalism_Social, 
+         Universalism_Nature, Routine, Social_Expansion, Power, 
+         Help_Science,Dislike, Env_Change, Prom_1, Prom_2, Prom_3, 
+         Prom_4, Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5) %>% 
   mutate( Age_Group = as.factor(Age_Group),
           Gender = as.factor(Gender),
           Country = as.factor(Country))
@@ -135,7 +150,7 @@ nrow(raw_survey_data %>% filter(Consent == "Yes" & nzchar(User_ID))%>%
   group_by(User_ID) %>%
   filter(row_number() == 1) %>%
   ungroup())
-
+str(survey_data)
 
 ## There are 237 consents that that have provided User Id's, after removing 7 that have done the survey twice. 
 
