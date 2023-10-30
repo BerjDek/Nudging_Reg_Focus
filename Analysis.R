@@ -6,7 +6,6 @@ str(survey_completed)
 # Filtering data for users who have completed the survey
 survey_completed <- data %>% filter(Complt_Survey == TRUE)
 
-survey_completed <- survey_completed %>%  mutate(Participation_Date = as.factor(Participation_Date)) ## remove later 
 
 # Descriptive statistics for demographic variables
 

@@ -10,7 +10,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Loaded Packages
+## Loaded Packages
 - tidyverse
 - car
 ```{r Package , include=FALSE}
@@ -18,15 +18,17 @@ library(tidyverse)
 library(car)
 ```
 
-### Data Upload Cleaning
+## Data Upload Cleaning
 
-##Survey Data 
 
 4 different data sets were loaded and cleaned in order to be combined for completing the analysis. 
+
+
+### Survey Data 
+
 Survey Data was Downloaded as CSV from LimeSurvey,loaded R where column names have been simplified, variables converted to appropriate formats, and new variables for Regulatory focus averages and classification as well as for higher order motivators were created, and finally the data set reduced to only include those that have given consent, completed the entire survey, and provided their UUID, while repeat entries were excluded
 
-
-```{r upload, echo = FALSE, results='hide'}
+```{r survey upload, echo = FALSE, results='hide', warning=FALSE}
 raw_survey_data <- read.csv("Results.csv")
 
 raw_survey_data <- raw_survey_data %>% rename( Language = Start.language,
@@ -162,112 +164,274 @@ survey_data <- survey_data %>%
 
 ```
 
-From the original 450 observations registered by Lime Survey there are 217 that have completed the entire survey, and provided their 
+From the original **450** observations registered by Lime Survey there are **217** that have completed the entire survey, and provided their 
 User IDs and whose entries will be analyzed. The total number of users that have provided consent and ID, 
-making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is 237, this number should be re-confirmed after uploading the Messaging Data
+making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is **237**, this number should be re-confirmed after uploading the Messaging Data
 
 
 
 
+### Loading Message Data
 
-## Converting columns to Proper Format
+
+Message acquired from MA server was loaded as CSV, and the "notification" column was split in order separate message type, language and number, and to create independent columns 
+The column formats were fixed to integer and date format. 
+As the data set provided information regarding messages sent in 2022 Repeat_User column was created, to filter and analyse only ones sent in 2023.
+
+Columns for User specific messaging period, number of total messages sent and read, and finally the number of the repeated message were created.
+
+Note that in the case of users that received a repeated message, all those that got their first message before the 5th of July 2023, had a repeat of the message they received on 30th of June on the 2nd of July, a date on which an invite should have been sent but instead a nudging message was sent.
+However this shouldn't impact the results, as due to random distribution each type of messaging has 38 participants receiving a repeated message.
 
 
-```{r conversion, echo=FALSE}
-raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
-raw_survey_data$User_ID <- sub(" target=", "", raw_survey_data$User_ID) 
-raw_survey_data <- raw_survey_data %>%
-  mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
+
+```{r message upload, echo = FALSE, results='hide', warning=FALSE}
+#load message Data
+raw_message_data <- read.csv(file="all_messages.csv", header = TRUE)
+#seperate notifacation column to type language and msg_nmbr
+raw_message_data <- raw_message_data %>% separate(notification_label, c('type','language','msg_nmbr'))
+#change the message date to simple date
+raw_message_data <- raw_message_data %>% 
+  rename(User_ID = user_uuid, Msg_Date = date_sent, Msg_Lang = language) %>% 
+  mutate(Msg_Nmbr = as.integer(msg_nmbr),
+         Msg_Date = as.POSIXct(Msg_Date, format = "%Y-%m-%d %H:%M:%S"),
+         Year = format(Msg_Date, "%Y")) %>%
+  group_by(User_ID) %>%
+  mutate(Repeat_User = n_distinct(Year) > 1) %>%
+  ungroup() %>%
+  select(-Year)
+
+
+message_data <- raw_message_data %>%
+  filter(year(Msg_Date) == 2023) %>% 
+  group_by(User_ID) %>%
+  summarize(
+    Msg_Type = first(type),
+    Repeat_User = first(Repeat_User),
+    Msg_Lang = first(Msg_Lang),
+    First_Msg_Date = as.POSIXct(format(min(Msg_Date[msg_nmbr == 1]), "%Y-%m-%d")),
+    Last_Msg_Date = as.POSIXct(format(max(Msg_Date[msg_nmbr == max(msg_nmbr)]), "%Y-%m-%d")),
+    Nmbr_Msgs_Sent = n(),
+    Nmbr_Msgs_Seen = sum(read_notification == "t"),
+    Repeated_Msg_Nmbr = if (anyDuplicated(msg_nmbr) > 0) msg_nmbr[duplicated(msg_nmbr)] else NA
+  ) %>%
+  ungroup() %>%
+  mutate(Msg_Type = as.factor(Msg_Type))
+
+#creating Messaging group based on date of first message received.
+message_data <- message_data %>%
+  mutate(
+    Message_Group = case_when(
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) <= 14 ~ "June1",
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) > 14 ~ "June2",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) <= 14 ~ "July1",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) > 14 ~ "July2",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) <= 14 ~ "Aug1",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) > 14 ~ "Aug2",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) <= 14 ~ "Sept1",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) > 14 ~ "Sept2",
+      TRUE ~ NA_character_
+    )
+  ) %>% 
+  mutate(Message_Group = as.factor(Message_Group))
+
+```
+
+The final count of users are 237 users that received messages, with 79 participants in each group.The number corresponds with the unique users that have initiated the survey and gave their consent.
+Note that the analysis of message effective could be limited to those who completed the survey to make sure to exclude those were uninterested, and wanted to get to the survey (which they later lost interest in)
+
+
+
+
+### Loading Reports Data
+ 
+ A data set containing information about every single report that has been filled on the platform since its initiation has been loaded as a CSV.
+ (the data set can be found online).
+ 
+
+ The The data set was also filtered to include reports only from the 2nd of October 2020, since User Id's have been reset with the update 
+ (ask  if instead of date version number should be used or this step avoided all together)
+ 
+ 
+```{r reports upload, echo = FALSE, results='hide', warning=FALSE}
+raw_reports_data <- read.csv(file="full_reports_table.csv", header = TRUE) %>% 
+  mutate(creation_time= as.POSIXct(creation_time, format = "%Y-%m-%d"))
+
+reports_data <- raw_reports_data %>%
+  select(user_id, location_choice, creation_time, type) %>% 
+  rename(User_ID = user_id,
+         Rprt_Loc_Choice = location_choice,
+         Rprt_Date = creation_time,
+         Rprt_Type = type) %>% 
+  filter(User_ID != "" & Rprt_Date >= as.POSIXct("2020-10-02"))
+
+reports_data <- reports_data %>% mutate(Rprt_Type = as.factor(Rprt_Type),
+                                        Rprt_Loc_Choice = as.factor(Rprt_Loc_Choice))
+
+
 ```
 
 
-## Adding New Columns
-- Added Age Groups (could be modified)
-- Added a column with the calculated dispostional Regulatory Focus of each participant
-- Removed Redundant Columns like Seed and Date Submitted
+When checking seasonality of reports, the beginning of June till mid October were determined as the Mosquito Season (This can be adjusted) 
 
-```{r adding new columns}
-raw_survey_data <- raw_survey_data %>%
-  mutate(Age_Group = case_when(
-    Age >= 18 & Age <= 25 ~ '18-25',
-    Age >= 26 & Age <= 35 ~ '26-35',
-    Age >= 36 & Age <= 45 ~ '36-45',
-    Age >= 46 & Age <= 55 ~ '46-55',
-    Age >= 56 & Age <= 65 ~ '56-65',
-    Age >= 66 ~ '66 and older',
-    TRUE ~ 'Unknown'  
-  ))
+The data showed that since 12/10/2020 till the date of the analysis 144,832 reports have been filled.
 
-raw_survey_data <- raw_survey_data %>% 
-  mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2 
-                            - Prev_3- Prev_4- Prev_5))
+45,135 unique users have contributed to fill the  144,832 reports Since 12/10/2020. This number should be confirmed once user data is analysed.
 
-raw_survey_data <- raw_survey_data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
-                                Age_Group, Gender, Country, Participation_Date, Network, 
-                                Other_Citi_Sci, Reg_Orientation, Openness_To_Change, Self_Enhancement,
-                                Continuity, Self_Transcendence, Security, Teaching, Self_Direction, 
-                                Stimulation, Hedonism, Achievement, Face, Conformity, Benevolence, 
-                                Universalism_Social, Universalism_Nature, Routine, 
-                                Social_Expansion, Power, Help_Science,Dislike, 
-                                Env_Change, Prom_1, Prom_2, Prom_3, Prom_4, 
-                                Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5)
 
-colnames(raw_survey_data)
+
+### Loading User Data
+
+Lastly, a data set containing all the User Id's that have ever been registered has been loaded as a CSV
+The col names and type were fixed, and the same with Reports data set, the registrations were filtered to includ only the ones from the 2nd of October 2020 and onward
+
+
+```{r user data upload, echo = FALSE, results='hide', warning=FALSE}
+
+
+raw_user_data <- read.csv(file="reports_by_uuid.csv", header = TRUE)
+
+raw_user_data <- raw_user_data %>% 
+  rename( User_ID = user_UUID,
+          Registered_Participation_Date = registration_time,
+          Registered_Total_Reports = n) %>% 
+  mutate(Registered_Participation_Date = as.POSIXct(Registered_Participation_Date, format = "%Y-%m-%d %H:%M:%S"),
+         Registered_Total_Reports = as.integer(Registered_Total_Reports)) %>%
+  replace_na(list(Registered_Total_Reports = 0)) 
+
+# Count of unique users that have submitted at least 1 report
+nrow(raw_user_data %>%
+    filter(!is.na(Registered_Total_Reports) & Registered_Total_Reports >= 1))
+
+ # 59,325 of the registered users have  filled a report
+nrow(raw_user_data %>%
+    filter(!is.na(Registered_Total_Reports) & Registered_Total_Reports >= 1 & 
+             Registered_Participation_Date >= as.POSIXct("2020-10-02")))
+ 
+
+user_data <- raw_user_data %>%
+  filter(Registered_Participation_Date >= as.POSIXct("2020-10-02"))
+```
+   
+   
+The count is 264,684 users in total, of which  44,532 users who have filled at least one report since the cutoff date of 2020-10-02. The different numbers between the unique users here and ones from the reports data set, 45,135 vs 44,532 seems to be due to the user data being downloaded from the server earlier (the file is older) than the reports data and doesn't include users registered in October 2023
+This number should be rechecked, when the final version of reports are uploaded for analysis
+
+   
+
+## Data Joining
+
+All four data sets were combined.
+New column for specifying the number of total, seasonal and reports per type added, while for those who received messages pre, during and post messaging report counts were tallied.
+
+The data set created, includes all users since the update including information regarding their reporting and registered year of participation.
+For those that have gave consent, information regarding the messaging experiment, and for all those who completed the survey, their demographic, regulatory and motivational ratings.
+
+Note that a long format of the data is to be created to be later used for time-series analysis
+
+```{r joining data, echo = FALSE, results='hide', warning=FALSE}
+
+#checking if all user_id's mentioned in  survey_data are mentioned in message_data.
+all(survey_data$User_ID %in% message_data$User_ID)
+
+#Joining survey data and message data based on user id
+data_tall <- full_join(survey_data, message_data, by = "User_ID")
+
+#checking if all user_id's mentioned in  message_data are mentioned in reports_data. Yes all are there
+all(message_data$User_ID %in% reports_data$User_ID)
+
+#Joining data by reports on user id
+data_tall <- full_join(data_tall, reports_data, by = "User_ID")
+
+data_tall <- data_tall %>%
+  group_by(User_ID) %>%
+  mutate(Got_Msgs = !is.na(First_Msg_Date),
+         Total_Rprts_Filled = n(),
+         Season_Rprts_Filled = sum(Rprt_Date >= "2023-06-01" & Rprt_Date <= "2023-10-15"),
+         Rprts_Filled_2023 = sum(Rprt_Date >= "2023-01-01"),
+         Total_Bite_Rprts_Filled = sum(Rprt_Type == "bite"),
+         Total_Adult_Rprts_Filled = sum(Rprt_Type == "adult"),
+         Total_Site_Rprts_Filled = sum(Rprt_Type == "site"),
+         Rprts_During_Msging = sum(Rprt_Date >= First_Msg_Date & Rprt_Date <= Last_Msg_Date, na.rm = TRUE),
+         Rprts_Before_Msging = sum(Rprt_Date >= (First_Msg_Date - days(45)) & Rprt_Date < First_Msg_Date, na.rm = TRUE),
+         Rprts_After_Msging = sum(Rprt_Date > Last_Msg_Date & Rprt_Date <= (Last_Msg_Date + days(45)), na.rm = TRUE),
+         Rprt_Loc_Usual_Choice = as.factor(names(which.max(table(Rprt_Loc_Choice))))) %>% 
+  ungroup()
+
+data_tall <- data_tall %>% 
+  select(User_ID, Rprt_Date, Rprt_Loc_Choice,  Rprt_Type, Got_Msgs,Complt_Survey, Total_Rprts_Filled, Age, Age_Group, 
+         Gender, Country, Participation_Date, Msg_Type, Reg_Orientation,Reg_Orientation_Cat, Network, Other_Citi_Sci,  Openness_To_Change,
+         Self_Enhancement, Continuity, Self_Transcendence, Security, Teaching, Message_Group, First_Msg_Date, Last_Msg_Date, Nmbr_Msgs_Sent, 
+         Nmbr_Msgs_Seen, Repeated_Msg_Nmbr,Rprts_Filled_2023,Season_Rprts_Filled, Repeat_User,Total_Bite_Rprts_Filled,
+         Total_Adult_Rprts_Filled, Total_Site_Rprts_Filled,Rprts_During_Msging, Rprts_Before_Msging, Rprts_After_Msging,Rprt_Loc_Usual_Choice)
+
+#summarizing  bu user ID to combine with user id data set of all registered users
+
+data <- data_tall %>%
+  group_by(User_ID) %>%
+  arrange(User_ID, Rprt_Date) %>% # Arrange by date to ensure first occurrence is taken
+  select(-Rprt_Date, -Rprt_Loc_Choice, -Rprt_Type) %>% # Remove unwanted columns
+  slice(1L) %>% # Take the first occurrence for each user
+  ungroup() 
+
+#joining data with user data to have a full count of users that report or don't
+data <- full_join(data, user_data, by = "User_ID")
+
+# Replaced NAs with either FALSE, Non or 0 in specific columns, and then  reordered data set for clarity
+
+data <- data %>%
+  mutate(across(c(Got_Msgs, Complt_Survey, Repeat_User), ~replace_na(.x, FALSE))) %>%
+  mutate(across(c(Total_Rprts_Filled, Nmbr_Msgs_Sent, Nmbr_Msgs_Seen, Rprts_Filled_2023, Season_Rprts_Filled,
+                  Total_Bite_Rprts_Filled, Total_Adult_Rprts_Filled, Total_Site_Rprts_Filled,
+                  Rprts_During_Msging, Rprts_Before_Msging, Rprts_After_Msging), ~replace_na(.x, 0))) %>%
+  mutate(Msg_Type = forcats::fct_expand(Msg_Type, "None")) %>% # adds "Non" as a level to the Msg_Type factor.
+  mutate(Msg_Type = tidyr::replace_na(Msg_Type, "None"))  # replaces NA values in Msg_Type with "Non
+ 
+
+data <- data %>% 
+  select(User_ID, Got_Msgs, Complt_Survey, Total_Rprts_Filled, Registered_Total_Reports, Rprt_Loc_Usual_Choice, Repeat_User,
+         Age , Age_Group, Gender, Country, Participation_Date, Registered_Participation_Date, everything())  
+
 ```
 
 
-## Row Filtering
 
-In order to process the variables the Original data set was cleaned to include those that completed the survey. 
+## Analysis
 
-From the original **450** Observers there are **227** that have completed the entire survey, and whose entries will be analyzed. **3** of them 
-did not have a UUID (probably team members that received the link or something went off in their app), not impacting current analysis but not allowing further investigation of its relation with on App behavior.
+### Demographic variables
 
-The total number of users from total that have clicked on the link and have provided consent and ID making them eligible for the messaging experiment is **258** of which **224** have provided information on their reg focus as well..
+```{r demographic, echo = FALSE,}
+# Filtering data for users who have completed the survey
+survey_completed <- data %>% filter(Complt_Survey == TRUE)
 
-```{r filtering rows, echo=FALSE, results='hide'}
-survey_data <- raw_survey_data %>%
-  filter(Last.page  == 5 & Consent == "Yes")
+# Descriptive statistics for demographic variables
 
-
-nrow(raw_survey_data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
-
-nrow(raw_survey_data %>% filter(Consent == "Yes", nzchar(User_ID)))
+summary(survey_completed %>% select(Age, Age_Group, Gender, Country, Network, Other_Citi_Sci, Participation_Date))
 ```
+Mean age of participants is 48.6, and in line with findings from previous studies.
+There is higher rate of male participation with 122 to 89,whre earlier findings had higher female or mostly equal participation rates.
+Majority of reports were as expected from 3 countries: Spain, Italy, and Netherlands with 103,77,and 22 participants respectively.
+The vast majority have no acquaintances also participating, and are not part of other citizen sciense projects
+The majority of participants are also as expected recent recruits from 2023 (72), and the participation drops as the the years go back (54,40,21,10.....)
 
-
-## Age
-
-The average age of survey participants was **48.7**
-The distribution was similar to earlier studies with the large majority of participants being between **35-64** 
-
-```{r age, results='hide'}
-mean(survey_data$Age, na.rm = TRUE) 
-
-ggplot(survey_data, aes(x = Age_Group)) +
-  geom_bar(fill = 'blue') +
-  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +
-  labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
+### Age Distribution
+```{r age, echo = FALSE,}
+ggplot(survey_completed, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "white") +
+  geom_vline(aes(xintercept = mean(Age, na.rm = TRUE)), color = "black", linetype = "dashed", size = 1) +
+  labs(title = "Age Distribution of Users", x = "Age", y = "Count") +
   theme_minimal() +
-  theme(axis.text.y = element_text(angle = 0, hjust = 1))
+  annotate("text", x = mean(survey_completed$Age, na.rm = TRUE), y = max(table(survey_completed$Age)), 
+           label = sprintf("Avg Age: %.1f", mean(survey_completed$Age, na.rm = TRUE)), vjust = -20, color = "black")
 ```
 
 
-## Gender Distribution
-**128** males to **93** females, **3** non-binary, **1** transgender, and **3** prefer not to say 
+### Gender Distribution
 
-```{r gender}
-gender_dist <- survey_data %>%
-  group_by(Gender) %>%
-  summarize(Frequency = n()) %>%
-  arrange(desc(Frequency))  
-
-
-ggplot(gender_dist, aes(x = reorder(Gender, -Frequency), y = Frequency)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) + 
-  labs(title = "Gender Distribution", x = "Gender", y = "Frequency") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")
+```{r gender, echo = FALSE,}
+ggplot(survey_completed, aes(x = reorder(Gender, -table(survey_completed$Gender)[Gender])))+
+  geom_bar(fill = "skyblue", color = "white") +
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) +
+  labs(title = "Gender Distribution of Users", x = "Gender", y = "Count") +
+  theme_minimal()
 ```
