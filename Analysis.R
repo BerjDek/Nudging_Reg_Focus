@@ -1,6 +1,6 @@
 
 library(car)
-
+str(survey_completed)
 #Analysis of survey data
 
 # Filtering data for users who have completed the survey
@@ -202,6 +202,20 @@ ggplot(average_data, aes(x = Motivator, y = Average)) +
   ylim(0, 5)
 rm(average_data)
 
+
+# Melting the data for motivators
+motivators_melted <- survey_completed %>%
+  select(Openness_To_Change:Teaching) %>%
+  gather(key = "Motivator", value = "Score")
+
+# Boxplot for Motivators # give a written summery, 
+ggplot(motivators_melted, aes(x = Motivator, y = Score)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Scores for Different Motivators",
+       x = "Motivator", y = "Score") +
+  theme_minimal()
+rm(motivators_melted)
+
 #distribution of motivators by gender, seems both genders rate motivators equally.
 
 average_data_gender <- survey_completed %>%
@@ -299,7 +313,7 @@ ggplot(average_data_reg, aes(x = Motivator, y = Average, fill = Reg_Orientation_
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_text(aes(label = sprintf("%.2f", Average), group=Reg_Orientation_Cat),
             position = position_dodge(width = 0.7), 
-            vjust = -0.5, size = 3) +
+            vjust = -0.5, size = 2) +
   labs(title = "Distribution of Average Motivator Ratings by Regulatory Orientation Category",
        y = "Average Rating",
        x = "Motivator") +
@@ -329,7 +343,6 @@ average_data_reg_cat <- survey_completed %>%
                       names_to = "Motivator", 
                       values_to = "Average")
 
-# Create the bar plot
 ggplot(average_data_reg_cat, aes(x = Reg_Orientation_Cat, y = Average, fill = Motivator)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_text(aes(label = sprintf("%.2f", Average), group=Motivator),
@@ -369,6 +382,9 @@ results <- data.frame(
   Motivator = motivators,
   P_value = sapply(motivators, get_pvalue)
 )
+
+print(results)
+
 rm( motivators, results, get_pvalue)
 
 #as expected perform a linear regression For each motivator where Regulatory Orientation score is the predictor and the motivator 
@@ -376,18 +392,227 @@ rm( motivators, results, get_pvalue)
 
 
 
-# Melting the data for motivators
-motivators_melted <- survey_completed %>%
-  select(Openness_To_Change:Teaching) %>%
-  gather(key = "Motivator", value = "Score")
+##Messages
 
-# Boxplot for Motivators # give a written summery, 
-ggplot(motivators_melted, aes(x = Motivator, y = Score)) +
-  geom_boxplot() +
-  labs(title = "Distribution of Scores for Different Motivators",
-       x = "Motivator", y = "Score") +
+sum(data$Got_Msgs)
+
+sum(data$Complt_Survey)
+
+#as stated before 237 individuals received messages, out of which 217 completed the survey.
+
+filtered_data <- data[data$Got_Msgs, ]
+ggplot(filtered_data, aes(x = Msg_Type)) +
+  geom_bar(fill = "skyblue") + 
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
+  labs(title = "Distribution of Message Type for Those Who Received Messages",
+       y = "Count",
+       x = "Message Type") +
   theme_minimal()
-rm(motivators_melted)
+
+filtered_data <- data[data$Got_Msgs & data$Complt_Survey, ]
+
+ggplot(filtered_data, aes(x = Msg_Type)) +
+  geom_bar(fill = "skyblue") + 
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
+  labs(title = "Distribution of Message Type for Those Who Received Messages and Completed the Survey",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal()
+
+rm(filtered_data)
+
+#The distribution of consents seems equal for 79 for each group, but for the ones that completed the survey it seems prevention by random got 
+#less, note that this might impact the results as one that did not fill the survey might be less motivated in general.
+
+
+
+survey_completed %>%
+  filter(!is.na(Msg_Type), !is.na(Gender), Gender %in% c("Male", "Female")) %>%
+  group_by(Gender) %>%
+  mutate(total = n()) %>%
+  group_by(Msg_Type, Gender, total) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  mutate(percentage = (count / total) * 100) %>%
+  ggplot(aes(x = fct_infreq(Msg_Type))) +
+  geom_bar(aes(y = percentage, fill = Gender), stat = "identity", position = "dodge", color = "white") +
+  geom_text(aes(y = percentage, label = scales::percent(percentage/100, accuracy = 1), group = Gender),
+            vjust = -0.5, position = position_dodge(width = 0.9)) +
+  labs(title = "Distribution Gender to different Message Types", 
+       x = "Msg_Type", 
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+survey_completed %>%
+  filter(!is.na(Msg_Type), !is.na(Gender), Gender %in% c("Male", "Female")) %>%
+  group_by(Msg_Type, Gender) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  ggplot(aes(x = fct_infreq(Msg_Type))) +
+  geom_bar(aes(y = count, fill = Gender), stat = "identity", position = "dodge", color = "white") +
+  geom_text(aes(y = count, label = count, group = Gender),
+            vjust = -0.5, position = position_dodge(width = 0.9)) +
+  labs(title = "Number of Males and Females Receiveing each Msg Type", 
+       x = "Msg_Type", 
+       y = "Count") +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# the distribution of types of message seems similar between the sexes
+
+
+#distribution by age group
+survey_completed %>%
+  filter(!is.na(Msg_Type), !is.na(Age_Group)) %>%
+  group_by(Age_Group) %>%
+  mutate(total_age_group = n()) %>%
+  group_by(Msg_Type, Age_Group, total_age_group) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  mutate(percentage = (count / total_age_group) * 100) %>%
+  ggplot(aes(x = fct_infreq(Msg_Type))) +
+  geom_bar(aes(y = percentage, fill = Age_Group), stat = "identity", position = "dodge", color = "white") +
+  geom_text(aes(y = percentage, label = scales::percent(percentage/100, accuracy = 1), group = Age_Group),
+            vjust = -0.5, position = position_dodge(width = 0.9)) +
+  labs(title = "Distribution of Msg_Type by Age Group", 
+       x = "Msg_Type", 
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+survey_completed %>%
+  group_by(Msg_Type, Age_Group) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Age_Group)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Age Groups in Each Message Type", y = "Percentage", x = "Message Type", fill = "Age Group") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+
+
+#by chance a the youngest group made of 13 individuals were assigned mostly to neutral messaging, the proportion seem mostly similar except for 
+#large chunk of neutral being younger than 25
+
+
+#also by year the distribution seems mostly similar between message types. 
+ggplot(survey_completed %>%
+         filter(!is.na(Msg_Type), !is.na(Participation_Date)) %>%
+         filter(Participation_Date %in% c('2023', '2022', '2021', '2020', '2019')) %>%
+         group_by(Participation_Date, Msg_Type) %>%
+         summarise(Count = n()) %>%
+         group_by(Participation_Date) %>%
+         mutate(Total = sum(Count)) %>%
+         mutate(Percentage = Count / Total * 100) %>%
+         ungroup() %>%
+         select(Participation_Date, Msg_Type, Count, Total, Percentage), 
+       aes(x = factor(Participation_Date, levels = c("2023", "2022", "2021", "2020", "2019")), 
+           y = Percentage, fill = Msg_Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", Percentage), y = Percentage + 2), position = position_dodge(width=0.9), size=2) +
+  labs(title = "Distribution of Msg_Type by Participation Year",
+       x = "Participation Year",
+       y = "Percentage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(limits = c(0, 100))
+
+
+
+
+
+#checking to see if the number of messages seen by users is different in the case of each message type, this checks all those that received a message
+msg_rate_data <- data %>%
+  filter(Got_Msgs == TRUE) %>%
+  mutate(Rate = ifelse(Nmbr_Msgs_Seen != 0, Nmbr_Msgs_Sent / Nmbr_Msgs_Seen, 0)) %>%
+  group_by(Msg_Type) %>%
+  summarise(Avg_Rate = mean(Rate, na.rm = TRUE))
+
+ggplot(msg_rate_data, aes(x = Msg_Type, y = Avg_Rate, fill = Msg_Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.2f", Avg_Rate), y = Avg_Rate + 0.02), position = position_dodge(width=0.9), size=3, vjust = -0.5) +
+  labs(title = "Average Message Reading Rate by Message Type",
+       x = "Message Type",
+       y = "Average Rate Messages Seen") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set1")
+
+
+msg_rate_data <- data %>%
+  filter(Got_Msgs == TRUE) %>%
+  mutate(Rate = ifelse(Nmbr_Msgs_Seen != 0, Nmbr_Msgs_Sent / Nmbr_Msgs_Seen, 0)) 
+
+ggplot(msg_rate_data, aes(x = Msg_Type, y = Rate)) +
+  geom_boxplot(outlier.shape = NA) + 
+  geom_jitter(width = 0.3, alpha = 0.4, size = 1) + 
+  labs(title = "Distribution of Message Rate by Message Type",
+       x = "Message Type",
+       y = "Rate (Nmbr_Msgs_Sent / Nmbr_Msgs_Seen)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+rm(msg_rate_data)
+
+#The messages seem to be read at a very low rate (the median is 1 for all) but not that differently based on type. 
+
+
+
+#Distribution of messages  based on regulatory focus orientation
+
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat)) %>%
+  group_by(Msg_Type, Reg_Orientation_Cat) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Reg_Orientation_Cat)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Reg_Orientation_Cat in Each Message Type", y = "Percentage", x = "Message Type", fill = "Reg_Orientation_Cat") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+
+#The distribution seems similar, ironically less neutral oriented users out of the 24 seem to have been randomly chosen to get neutral messages
+
+
+
+
+#Distribution of Messaging Start Date
+
+
+data %>% subset(Got_Msgs == TRUE) %>% 
+ggplot(aes(x = factor(Message_Group, levels = c("June1", "June2", "July1", "July2", "Aug1", "Aug2", "Sept1", "Sept2")))) +
+  geom_bar(fill = "skyblue") + 
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
+  labs(title = "Distribution of Date of First message received",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal()
+
+
+
+
+
+
+
+
+
 
 
 # Number of Reports Filled by Age Group # for this code  give a written summery, and make the graph so that the distribution is clearer, maybe limit space above 400 and mention occurrences

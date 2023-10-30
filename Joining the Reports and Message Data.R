@@ -34,7 +34,7 @@ data_tall <- data_tall %>%
 data_tall <- data_tall %>% 
   select(User_ID, Rprt_Date, Rprt_Loc_Choice,  Rprt_Type, Got_Msgs,Complt_Survey, Total_Rprts_Filled, Age, Age_Group, 
          Gender, Country, Participation_Date, Msg_Type, Reg_Orientation,Reg_Orientation_Cat, Network, Other_Citi_Sci,  Openness_To_Change,
-         Self_Enhancement, Continuity, Self_Transcendence, Security, Teaching, First_Msg_Date, Last_Msg_Date, Nmbr_Msgs_Sent, 
+         Self_Enhancement, Continuity, Self_Transcendence, Security, Teaching, Message_Group, First_Msg_Date, Last_Msg_Date, Nmbr_Msgs_Sent, 
          Nmbr_Msgs_Seen, Repeated_Msg_Nmbr,Rprts_Filled_2023,Season_Rprts_Filled, Repeat_User,Total_Bite_Rprts_Filled,
          Total_Adult_Rprts_Filled, Total_Site_Rprts_Filled,Rprts_During_Msging, Rprts_Before_Msging, Rprts_After_Msging,Rprt_Loc_Usual_Choice)
 

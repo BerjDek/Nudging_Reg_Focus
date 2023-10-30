@@ -26,7 +26,6 @@ reports_data <- reports_data %>% mutate(Rprt_Type = as.factor(Rprt_Type),
 
 min(reports_data$Rprt_Date, na.rm = TRUE)
 
-str(reports_data)
 
 #Since 12/10/2020 till the date of the analysis 144,832 reports have been filled.
 
@@ -59,4 +58,5 @@ reports_data %>%
 
 
 
+  str(data)
   

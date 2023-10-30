@@ -20,7 +20,7 @@ library(tidyverse)
 Data was Downloaded as CSV from LimeSurvey,and loaded to R and column names have been simplified.
 
 
-```{r upload, echo = FALSE}
+```{r upload, echo = FALSE, results='hide'}
 raw_survey_data <- read.csv("Results.csv")
 
 

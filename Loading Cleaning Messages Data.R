@@ -48,10 +48,29 @@ message_data <- raw_message_data %>%
   ungroup() %>%
   mutate(Msg_Type = as.factor(Msg_Type))
 
+#creating Messaging group based on date of first message received.
+message_data <- message_data %>%
+  mutate(
+    Message_Group = case_when(
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) <= 14 ~ "June1",
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) > 14 ~ "June2",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) <= 14 ~ "July1",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) > 14 ~ "July2",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) <= 14 ~ "Aug1",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) > 14 ~ "Aug2",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) <= 14 ~ "Sept1",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) > 14 ~ "Sept2",
+      TRUE ~ NA_character_
+    )
+  ) %>% 
+  mutate(Message_Group = as.factor(Message_Group))
+  
+
+message_data <- message_data 
+
 
 #The final count of users are 237 users that received messages, with 79 participants in each group.
 #The number corresponds with the Unique users that have initiated the survey and gave their consent
-
 
 
 #just to check, downsizing the users to the ones that completed the whole survey, so to make sure they didn´t just click consent and were later uninterested
