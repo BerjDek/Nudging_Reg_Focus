@@ -1,0 +1,273 @@
+---
+title: "Big PDF"
+author: "Berj Dekramanjian"
+date: "2023-10-30"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Loaded Packages
+- tidyverse
+- car
+```{r Package , include=FALSE}
+library(tidyverse)
+library(car)
+```
+
+### Data Upload Cleaning
+
+##Survey Data 
+
+4 different data sets were loaded and cleaned in order to be combined for completing the analysis. 
+Survey Data was Downloaded as CSV from LimeSurvey,loaded R where column names have been simplified, variables converted to appropriate formats, and new variables for Regulatory focus averages and classification as well as for higher order motivators were created, and finally the data set reduced to only include those that have given consent, completed the entire survey, and provided their UUID, while repeat entries were excluded
+
+
+```{r upload, echo = FALSE, results='hide'}
+raw_survey_data <- read.csv("Results.csv")
+
+raw_survey_data <- raw_survey_data %>% rename( Language = Start.language,
+                                               Consent = I.GIVE.MY.CONSENT.to.participate.in.this.study.and.allow.the.use.of.data.generated.in.Mosquito.Alert.on.my.device.to.be.re.used.in.this.research.project..,
+                                               User_ID = user_UUID,
+                                               Age = How.old.are.you.,
+                                               Gender = What.is.your.gender.,
+                                               Country = What.is.the.country.you.currently.reside.in.,
+                                               Participation_Date = In.what.year.did.you.first.participate.in.Mosquito.Alert.,
+                                               Network = How.many.people.do.you.personally.know..acquaintances..friends..family.members.etc...who.are.participating.in.Mosquito.Alert..not.including.yourself..,
+                                               Other_Citi_Sci = Are.you.currently.engaged.in.other.citizen.science.projects.,
+                                               Self_Direction = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.am.interested.in.the.topic.of.this.project.,
+                                               Stimulation = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.challenge.myself.and.do.something.new.,
+                                               Hedonism = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.s.a.fun.activity.,
+                                               Achievement = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.s.an.opportunity.to.perform.better.than.others.,
+                                               Face = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.enhance.my.reputation.,
+                                               Security = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.live.in.safer.surroundings.,
+                                               Conformity = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....Other.people.I.know.are.participating..,
+                                               Benevolence = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.contribute.to.my.community.,
+                                               Universalism_Social = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.make.the.world.a.better.place.,
+                                               Universalism_Nature = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.protect.the.environment.,
+                                               Routine = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.is.part.of.my.routine.,
+                                               Social_Expansion = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.be.part.of.this.volunteers..community.,
+                                               Power =On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.gain.recognition.,
+                                               Help_Science = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.contribute.to.science.,
+                                               Teaching = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.use.it.to.teach.others.about.the.topic.,
+                                               Dislike = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.dislike.mosquitos..,
+                                               Env_Change = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.noticed.an.increase.or.change.in.mosquitos.in.my.surroundings.,
+                                               Prom_1 = I.prefer.to.work.without.instructions.from.others.,
+                                               Prev_1 = Rules.and.regulations.are.helpful.and.necessary.for.me,
+                                               Prev_2 = For.me..it.is.very.important.to.carry.out.the.obligations.placed.on.me.,
+                                               Prom_2 = I.generally.solve.problems.creatively.,
+                                               Prev_3 = I.m.not.bothered.about.reviewing.or.checking.things.really.closely.,
+                                               Prom_3 = I.like.to.do.things.in.a.new.way.,
+                                               Prev_4 = I.always.try.to.make.my.work.as.accurate.and.error.free.as.possible.,
+                                               Prom_4 = I.like.trying.out.lots.of.different.things..and.am.often.successful.in.doing.so.,
+                                               Prom_5 = It.is.important.to.me.that.my.achievements.are.recognized.and.valued.by.other.people.,
+                                               Prev_5 = I.often.think.about.what.other.people.expect.of.me.)
+
+raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
+
+raw_survey_data$User_ID <- sub(" target=", "", raw_survey_data$User_ID) #removed target= which was appearing at the end of some uuid's
+
+#Turning the Reg Focus Responses to Numeral
+raw_survey_data <- raw_survey_data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
+                                              Prom_2 = as.numeric(str_extract(Prom_2, "\\d+")),
+                                              Prom_3 = as.numeric(str_extract(Prom_3, "\\d+")),
+                                              Prom_4 = as.numeric(str_extract(Prom_4, "\\d+")),
+                                              Prom_5 = as.numeric(str_extract(Prom_5, "\\d+")),
+                                              Prev_1 = as.numeric(str_extract(Prev_1, "\\d+")),
+                                              Prev_2 = as.numeric(str_extract(Prev_2, "\\d+")),
+                                              Prev_3 = as.numeric(str_extract(Prev_3, "\\d+")),
+                                              Prev_4 = as.numeric(str_extract(Prev_4, "\\d+")),
+                                              Prev_5 = as.numeric(str_extract(Prev_5, "\\d+")))
+
+
+# Converting to proper formats
+raw_survey_data <- raw_survey_data %>%
+  mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
+
+raw_survey_data <- raw_survey_data %>% mutate(Network = as.numeric(Network))
+
+raw_survey_data <- raw_survey_data %>%  mutate(Participation_Date = as.factor(Participation_Date))
+
+# Converting Other_Citi_Sci to a binary variable
+raw_survey_data <- raw_survey_data %>%
+  mutate(Other_Citi_Sci = ifelse(Other_Citi_Sci == "Yes", 1, 0))
+
+
+#creating age groups
+raw_survey_data <- raw_survey_data %>%
+  mutate(Age_Group = case_when(
+    Age >= 18 & Age <= 25 ~ '18-25',
+    Age >= 26 & Age <= 35 ~ '26-35',
+    Age >= 36 & Age <= 48 ~ '36-48',
+    Age >= 49 & Age <= 62 ~ '49-62',
+    Age >= 63 ~ '63 and older',
+    TRUE ~ 'Unknown'  
+  ))
+
+raw_survey_data <- raw_survey_data %>% mutate(Age_Group = as.factor(Age_Group))
+
+#creating an average individual Reg Focus
+raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
+
+
+# Adding categorical version of Reg_Orientation
+raw_survey_data <- raw_survey_data %>%
+  mutate(Reg_Orientation_Cat = case_when(
+    Reg_Orientation < 0 ~ "Prevention-oriented",
+    Reg_Orientation == 0 ~ "Neutral",
+    Reg_Orientation > 0 ~ "Promotion-oriented",
+    TRUE ~ as.character(NA)  # For NAs
+  ))
+raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation_Cat = as.factor(Reg_Orientation_Cat))
+
+
+#Creating 4 higher level orders from CSMS of Levontin et.al
+
+raw_survey_data <- raw_survey_data %>%
+  mutate(Openness_To_Change = round((Self_Direction + Stimulation + Social_Expansion+Hedonism)/4,2)) %>%
+  mutate(Self_Enhancement = round((Achievement + Power + Face)/3,2)) %>%
+  mutate(Continuity = round((Routine + Conformity)/2,2)) %>%
+  mutate(Self_Transcendence = round((Universalism_Social + Universalism_Nature + Benevolence+ Help_Science)/4,2))  
+
+#rearranging 
+raw_survey_data <- raw_survey_data %>% 
+  select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+         Age_Group, Gender, Country, Participation_Date, Network, 
+         Other_Citi_Sci, Reg_Orientation,Reg_Orientation_Cat, 
+         Openness_To_Change, Self_Enhancement, Continuity, Self_Transcendence, 
+         Security, Teaching, Self_Direction, Stimulation, Hedonism, 
+         Achievement, Face, Conformity, Benevolence, Universalism_Social, 
+         Universalism_Nature, Routine, Social_Expansion, Power, 
+         Help_Science,Dislike, Env_Change, Prom_1, Prom_2, Prom_3, 
+         Prom_4, Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5) %>% 
+  mutate( Age_Group = as.factor(Age_Group),
+          Gender = as.factor(Gender),
+          Country = as.factor(Country))
+                                        
+
+#filtering to those who consented and completed the survey, and their UUID has been registered.
+
+survey_data <- raw_survey_data %>%
+  filter(Last.page  == 5 & Consent == "Yes" & nzchar(User_ID) > 0)
+
+#removed the entries by users that have filled the survey twice, maintaining the results of their first attempt and deleting repeats.
+survey_data <- survey_data %>%
+  group_by(User_ID) %>%
+  filter(row_number() == 1) %>%
+  mutate(Complt_Survey = TRUE) %>% 
+  ungroup()
+
+```
+
+From the original 450 observations registered by Lime Survey there are 217 that have completed the entire survey, and provided their 
+User IDs and whose entries will be analyzed. The total number of users that have provided consent and ID, 
+making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is 237, this number should be re-confirmed after uploading the Messaging Data
+
+
+
+
+
+## Converting columns to Proper Format
+
+
+```{r conversion, echo=FALSE}
+raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
+raw_survey_data$User_ID <- sub(" target=", "", raw_survey_data$User_ID) 
+raw_survey_data <- raw_survey_data %>%
+  mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
+```
+
+
+## Adding New Columns
+- Added Age Groups (could be modified)
+- Added a column with the calculated dispostional Regulatory Focus of each participant
+- Removed Redundant Columns like Seed and Date Submitted
+
+```{r adding new columns}
+raw_survey_data <- raw_survey_data %>%
+  mutate(Age_Group = case_when(
+    Age >= 18 & Age <= 25 ~ '18-25',
+    Age >= 26 & Age <= 35 ~ '26-35',
+    Age >= 36 & Age <= 45 ~ '36-45',
+    Age >= 46 & Age <= 55 ~ '46-55',
+    Age >= 56 & Age <= 65 ~ '56-65',
+    Age >= 66 ~ '66 and older',
+    TRUE ~ 'Unknown'  
+  ))
+
+raw_survey_data <- raw_survey_data %>% 
+  mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2 
+                            - Prev_3- Prev_4- Prev_5))
+
+raw_survey_data <- raw_survey_data %>% select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+                                Age_Group, Gender, Country, Participation_Date, Network, 
+                                Other_Citi_Sci, Reg_Orientation, Openness_To_Change, Self_Enhancement,
+                                Continuity, Self_Transcendence, Security, Teaching, Self_Direction, 
+                                Stimulation, Hedonism, Achievement, Face, Conformity, Benevolence, 
+                                Universalism_Social, Universalism_Nature, Routine, 
+                                Social_Expansion, Power, Help_Science,Dislike, 
+                                Env_Change, Prom_1, Prom_2, Prom_3, Prom_4, 
+                                Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5)
+
+colnames(raw_survey_data)
+```
+
+
+## Row Filtering
+
+In order to process the variables the Original data set was cleaned to include those that completed the survey. 
+
+From the original **450** Observers there are **227** that have completed the entire survey, and whose entries will be analyzed. **3** of them 
+did not have a UUID (probably team members that received the link or something went off in their app), not impacting current analysis but not allowing further investigation of its relation with on App behavior.
+
+The total number of users from total that have clicked on the link and have provided consent and ID making them eligible for the messaging experiment is **258** of which **224** have provided information on their reg focus as well..
+
+```{r filtering rows, echo=FALSE, results='hide'}
+survey_data <- raw_survey_data %>%
+  filter(Last.page  == 5 & Consent == "Yes")
+
+
+nrow(raw_survey_data %>%filter(Last.page  == 5 & Consent == "Yes", nzchar(User_ID)))
+
+nrow(raw_survey_data %>% filter(Consent == "Yes", nzchar(User_ID)))
+```
+
+
+## Age
+
+The average age of survey participants was **48.7**
+The distribution was similar to earlier studies with the large majority of participants being between **35-64** 
+
+```{r age, results='hide'}
+mean(survey_data$Age, na.rm = TRUE) 
+
+ggplot(survey_data, aes(x = Age_Group)) +
+  geom_bar(fill = 'blue') +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +
+  labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 0, hjust = 1))
+```
+
+
+## Gender Distribution
+**128** males to **93** females, **3** non-binary, **1** transgender, and **3** prefer not to say 
+
+```{r gender}
+gender_dist <- survey_data %>%
+  group_by(Gender) %>%
+  summarize(Frequency = n()) %>%
+  arrange(desc(Frequency))  
+
+
+ggplot(gender_dist, aes(x = reorder(Gender, -Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) + 
+  labs(title = "Gender Distribution", x = "Gender", y = "Frequency") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+```
