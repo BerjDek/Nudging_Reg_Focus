@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Loaded Packages
 - tidyverse
 - car
-```{r Package , include=FALSE}
+```{r Package , include=FALSE, warning=FALSE}
 library(tidyverse)
 library(car)
 ```
@@ -181,7 +181,7 @@ As the data set provided information regarding messages sent in 2022 Repeat_User
 Columns for User specific messaging period, number of total messages sent and read, and finally the number of the repeated message were created.
 
 Note that in the case of users that received a repeated message, all those that got their first message before the 5th of July 2023, had a repeat of the message they received on 30th of June on the 2nd of July, a date on which an invite should have been sent but instead a nudging message was sent.
-However this shouldn't impact the results, as due to random distribution each type of messaging has 38 participants receiving a repeated message.
+However this shouldn't impact the results, as due to random distribution each type of messaging has **38** participants receiving a repeated message.
 
 
 
@@ -237,7 +237,7 @@ message_data <- message_data %>%
 
 ```
 
-The final count of users are 237 users that received messages, with 79 participants in each group.The number corresponds with the unique users that have initiated the survey and gave their consent.
+The final count of users are **237** users that received messages, with **79** participants in each group.The number corresponds with the unique users that have initiated the survey and gave their consent.
 Note that the analysis of message effective could be limited to those who completed the survey to make sure to exclude those were uninterested, and wanted to get to the survey (which they later lost interest in)
 
 
@@ -274,16 +274,16 @@ reports_data <- reports_data %>% mutate(Rprt_Type = as.factor(Rprt_Type),
 
 When checking seasonality of reports, the beginning of June till mid October were determined as the Mosquito Season (This can be adjusted) 
 
-The data showed that since 12/10/2020 till the date of the analysis 144,832 reports have been filled.
+The data showed that since 12/10/2020 till the date of the analysis **144,832** reports have been filled.
 
-45,135 unique users have contributed to fill the  144,832 reports Since 12/10/2020. This number should be confirmed once user data is analysed.
+**45,135** unique users have contributed to fill the  **144,832** reports Since 12/10/2020. This number should be confirmed once user data is analysed.
 
 
 
 ### Loading User Data
 
 Lastly, a data set containing all the User Id's that have ever been registered has been loaded as a CSV
-The col names and type were fixed, and the same with Reports data set, the registrations were filtered to includ only the ones from the 2nd of October 2020 and onward
+The col names and type were fixed, and the same with Reports data set, the registrations were filtered to include only the ones from the 2nd of October 2020 and onward
 
 
 ```{r user data upload, echo = FALSE, results='hide', warning=FALSE}
@@ -314,7 +314,7 @@ user_data <- raw_user_data %>%
 ```
    
    
-The count is 264,684 users in total, of which  44,532 users who have filled at least one report since the cutoff date of 2020-10-02. The different numbers between the unique users here and ones from the reports data set, 45,135 vs 44,532 seems to be due to the user data being downloaded from the server earlier (the file is older) than the reports data and doesn't include users registered in October 2023
+The count is **264,684** users in total, of which  **44,532** users who have filled at least one report since the cutoff date of 2020-10-02. The different numbers between the unique users here and ones from the reports data set, **45,135** vs **44,532** seems to be due to the user data being downloaded from the server earlier (the file is older) than the reports data and doesn't include users registered in October 2023
 This number should be rechecked, when the final version of reports are uploaded for analysis
 
    
@@ -326,6 +326,8 @@ New column for specifying the number of total, seasonal and reports per type add
 
 The data set created, includes all users since the update including information regarding their reporting and registered year of participation.
 For those that have gave consent, information regarding the messaging experiment, and for all those who completed the survey, their demographic, regulatory and motivational ratings.
+
+The final number of users after combining the data sets and taking into account the added number of users from the reports data set that were not in the user data set; were **265227** registered citizen scientists since October 2nd 2020, out of which **45,135** users who have filled at least one report 
 
 Note that a long format of the data is to be created to be later used for time-series analysis
 
@@ -408,11 +410,11 @@ survey_completed <- data %>% filter(Complt_Survey == TRUE)
 
 summary(survey_completed %>% select(Age, Age_Group, Gender, Country, Network, Other_Citi_Sci, Participation_Date))
 ```
-Mean age of participants is 48.6, and in line with findings from previous studies.
-There is higher rate of male participation with 122 to 89,whre earlier findings had higher female or mostly equal participation rates.
-Majority of reports were as expected from 3 countries: Spain, Italy, and Netherlands with 103,77,and 22 participants respectively.
-The vast majority have no acquaintances also participating, and are not part of other citizen sciense projects
-The majority of participants are also as expected recent recruits from 2023 (72), and the participation drops as the the years go back (54,40,21,10.....)
+Mean age of participants is **48.6**, and in line with findings from previous studies.
+There is higher rate of male participation with **122** to **89**,where earlier findings had higher female or mostly equal participation rates.
+Majority of reports were as expected from **3** countries: Spain, Italy, and Netherlands with **103,77**,and **22** participants respectively.
+The vast majority have no acquaintances also participating, and are not part of other citizen science projects
+The majority of participants are also as expected recent recruits from 2023 (**72**), and the participation drops as the the years go back (**54,40,21,10.....**)
 
 ### Age Distribution
 ```{r age, echo = FALSE,}
@@ -435,3 +437,599 @@ ggplot(survey_completed, aes(x = reorder(Gender, -table(survey_completed$Gender)
   labs(title = "Gender Distribution of Users", x = "Gender", y = "Count") +
   theme_minimal()
 ```
+
+
+### Regulatory Focus & Motivators
+
+```{r Reg and Mot, echo = FALSE,}
+
+summary(survey_completed %>% select(Reg_Orientation, Reg_Orientation_Cat, Openness_To_Change, Self_Enhancement, 
+                                    Continuity, Self_Transcendence, Security, Teaching))
+```
+
+The average Regulatory orientation of survey takers is **-1.381**, meaning more prevention oriented as hypothesized, counter to the notion that a general population should be split equally and in western countries be more inclined to be promotion oriented. Checking the participants by categorization shows that by far the majority of users are of prevention-orientation with **121** to **70**.
+
+Regarding the motivators, the two highest means were for Self Transcendence **4.23** and Security **4.23** with security having a higher median **5** followed by Openness to Change **3.24**, Teaching **2.26**, and very low scores for Continuity **1.8** and Self Enhancement **1.49**
+
+
+
+### Regulatory Focus Disrtibution 
+
+```{r Reg Focus Disrtibution, echo = FALSE,}
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat)) %>%
+  ggplot(aes(x = fct_infreq(Reg_Orientation_Cat))) +
+  geom_bar(fill = "skyblue", color = "white") +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Distribution of Regulatory Orientation Categories", 
+       x = "Regulatory Orientation Category", 
+       y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+#### By Gender
+
+```{r Reg Focus GenderDisrtibution, echo = FALSE}
+
+
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat), !is.na(Gender), Gender %in% c("Male", "Female")) %>%
+  group_by(Gender) %>%
+  mutate(total = n()) %>%
+  group_by(Reg_Orientation_Cat, Gender, total) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  mutate(percentage = (count / total) * 100) %>%
+  ggplot(aes(x = fct_infreq(Reg_Orientation_Cat))) +
+  geom_bar(aes(y = percentage, fill = Gender), stat = "identity", position = "dodge", color = "white") +
+  geom_text(aes(y = percentage, label = scales::percent(percentage/100, accuracy = 1), group = Gender),
+            vjust = -0.5, position = position_dodge(width = 0.9)) +
+  labs(title = "Distribution of Regulatory Orientation Categories by Gender", 
+       x = "Regulatory Orientation Category", 
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+The distribution seems mostly equal between genders, interesting that males seem to be promotion oriented at a level higher than women, relating to the findings in earlier research for disposition of women to care about public health issues at a higher rate
+
+
+
+#### By Age Group
+```{r Reg Focus Age Disrtibution, echo = FALSE, warning=FALSE}
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat), !is.na(Age_Group)) %>%
+  group_by(Age_Group) %>%
+  mutate(total_age_group = n()) %>%
+  group_by(Reg_Orientation_Cat, Age_Group, total_age_group) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  mutate(percentage = (count / total_age_group) * 100) %>%
+  ggplot(aes(x = fct_infreq(Reg_Orientation_Cat))) +
+  geom_bar(aes(y = percentage, fill = Age_Group), stat = "identity", position = "dodge", color = "white") +
+  geom_text(aes(y = percentage, label = scales::percent(percentage/100, accuracy = 1), group = Age_Group),
+            vjust = -0.5, position = position_dodge(width = 0.9)) +
+  labs(title = "Distribution of Regulatory Orientation Categories by Age Group", 
+       x = "Regulatory Orientation Category", 
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Distribution seems in general similar to the general distribution with prevention being a third higher than promotion orientation. The thing that stand out seem to be lack of **8-25** age group in neutral and higher representation in prevention, and a higher percentage of promotion orientation than usual for  **36-48** year segment
+
+
+#### By Year of Initial Participation
+```{r Reg Focus participation year Disrtibution, echo = FALSE}
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat), !is.na(Participation_Date)) %>%
+  filter(Participation_Date %in% c('2023', '2022', '2021', '2020', '2019')) %>%
+  group_by(Participation_Date, Reg_Orientation_Cat) %>%
+  summarise(Count = n(), .groups = 'drop_last') %>%
+  group_by(Participation_Date) %>%
+  mutate(Total = sum(Count), Percentage = Count / Total * 100) %>%
+  ungroup() %>%
+  ggplot(aes(x = factor(Participation_Date, levels = c("2023", "2022", "2021", "2020", "2019")), 
+             y = Percentage, fill = Reg_Orientation_Cat)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", Percentage), y = Percentage + 2), 
+            position = position_dodge(width=0.9), size=3) +
+  labs(title = "Distribution of Regulatory Orientation Categories by Participation Year",
+       x = "Participation Year",
+       y = "Percentage") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(limits = c(0, 100))
+
+```
+
+It seems regardless of the major campaign this year the project seems to attract a higher percentage  prevention orientation individuals in general. The only year where we attract equal percentages is 2021, this might be due to the country of sign-ups, which should be clearer whith visualizing the distribution by country
+
+
+#### By Country
+```{r Reg Focus participation Country Disrtibution, echo = FALSE}
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat), !is.na(Country)) %>% 
+  group_by(Country, Reg_Orientation_Cat) %>%
+  summarise(Count = n(), .groups = 'drop_last') %>%
+  left_join(
+    survey_completed %>%
+      group_by(Country) %>%
+      summarise(Total = n(), .groups = 'drop_last'), 
+    by = "Country"
+  ) %>%
+  mutate(Percentage = (Count / Total) * 100) %>%
+  filter(Country %in% c("Spain", "Italy", "Netherlands", "Hungary")) %>%
+  ggplot(aes(x = factor(Country, levels = c("Spain", "Italy", "Netherlands", "Hungary")), 
+             y = Percentage, 
+             fill = Reg_Orientation_Cat)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = sprintf("%.1f%%", Percentage)), position = position_dodge(width = 0.9), vjust = -0.5, size = 3) +
+  labs(title = "Distribution of Regulatory Orientation Categories by Country",
+       y = "Percentage",
+       x = "Country") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+As expected the Netherlands has the biggest discrepancy of promotion oriented individuals participating. And Spain is by far the place with the highest proportion of individuals with a prevention orientation.
+
+### Motivation Disrtibution 
+
+```{r Motivation Disrtibution, echo = FALSE, warning=FALSE}
+
+survey_completed %>%
+  summarise(
+    Openness_To_Change = mean(Openness_To_Change, na.rm = TRUE),
+    Self_Enhancement = mean(Self_Enhancement, na.rm = TRUE),
+    Continuity = mean(Continuity, na.rm = TRUE),
+    Self_Transcendence = mean(Self_Transcendence, na.rm = TRUE),
+    Security = mean(Security, na.rm = TRUE),
+    Teaching = mean(Teaching, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = everything(), 
+               names_to = "Motivator", 
+               values_to = "Average") %>%
+  ggplot(aes(x = Motivator, y = Average)) +
+  geom_bar(stat = "identity", fill = "skyblue", width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", Average)), vjust = -0.5, size = 4) +
+  labs(title = "Distribution of Average Motivator Ratings",
+       y = "Rating over 5",
+       x = "Motivator") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  ylim(0, 5)
+
+survey_completed %>%
+  select(Openness_To_Change:Teaching) %>%
+  pivot_longer(cols = everything(), names_to = "Motivator", values_to = "Score") %>%
+  ggplot(aes(x = Motivator, y = Score)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Scores for Different Motivators",
+       x = "Motivator", y = "Score") +
+  theme_minimal()
+
+```
+
+#### By Gender
+```{r Motivation by Gender Disrtibution, echo = FALSE}
+survey_completed %>%
+  group_by(Gender) %>%
+  summarise(
+    Openness_To_Change = mean(Openness_To_Change, na.rm = TRUE),
+    Self_Enhancement = mean(Self_Enhancement, na.rm = TRUE),
+    Continuity = mean(Continuity, na.rm = TRUE),
+    Self_Transcendence = mean(Self_Transcendence, na.rm = TRUE),
+    Security = mean(Security, na.rm = TRUE),
+    Teaching = mean(Teaching, na.rm = TRUE)
+  ) %>%
+  filter(Gender %in% c("Male", "Female")) %>% 
+  pivot_longer(cols = -Gender, 
+               names_to = "Motivator", 
+               values_to = "Average") %>%
+  ggplot(aes(x = Motivator, y = Average, fill = Gender)) +
+    geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+    geom_text(aes(label = sprintf("%.2f", Average), group=Gender),
+              position = position_dodge(width = 0.7), 
+              vjust = -0.5, size = 4) +
+    labs(title = "Distribution of Average Motivator Ratings by Gender",
+         y = "Average Rating",
+         x = "Motivator") +
+    scale_fill_manual(values = c("Female" = "red", "Male" = "blue")) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          legend.title = element_blank(),
+          legend.position = "top") +
+    ylim(0, 5)
+
+```
+Both genders seem mostly similar in their judgment of various motivators
+
+
+#### By Age
+```{r Motivation by Age Disrtibution, echo = FALSE}
+survey_completed %>%
+  group_by(Age_Group) %>%
+  summarise(
+    Openness_To_Change = mean(Openness_To_Change, na.rm = TRUE),
+    Self_Enhancement = mean(Self_Enhancement, na.rm = TRUE),
+    Continuity = mean(Continuity, na.rm = TRUE),
+    Self_Transcendence = mean(Self_Transcendence, na.rm = TRUE),
+    Security = mean(Security, na.rm = TRUE),
+    Teaching = mean(Teaching, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = -Age_Group, 
+               names_to = "Motivator", 
+               values_to = "Average") %>%
+  ggplot(aes(x = Motivator, y = Average, fill = Age_Group)) +
+    geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+    geom_text(aes(label = sprintf("%.2f", Average), group=Age_Group),
+              position = position_dodge(width = 0.7), 
+              vjust = -0.5, size = 2) +
+    labs(title = "Distribution of Average Motivator Ratings by Age Group",
+         y = "Average Rating",
+         x = "Motivator") +
+    scale_fill_brewer(palette = "Set1") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          legend.title = element_blank(),
+          legend.position = "top") +
+    ylim(0, 5)
+```
+
+
+
+#### By Regulatory Focus
+```{r Motivation by Regulatory Focus, echo = FALSE}
+survey_completed %>%
+  filter(Reg_Orientation_Cat != "NA") %>%
+  group_by(Reg_Orientation_Cat) %>%
+  summarise(
+    Openness_To_Change = mean(Openness_To_Change, na.rm = TRUE),
+    Self_Enhancement = mean(Self_Enhancement, na.rm = TRUE),
+    Continuity = mean(Continuity, na.rm = TRUE),
+    Self_Transcendence = mean(Self_Transcendence, na.rm = TRUE),
+    Security = mean(Security, na.rm = TRUE),
+    Teaching = mean(Teaching, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = -Reg_Orientation_Cat, 
+               names_to = "Motivator", 
+               values_to = "Average") %>%
+  ggplot(aes(x = Motivator, y = Average, fill = Reg_Orientation_Cat)) +
+    geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+    geom_text(aes(label = sprintf("%.2f", Average), group=Reg_Orientation_Cat),
+              position = position_dodge(width = 0.7), 
+              vjust = -0.5, size = 2) +
+    labs(title = "Distribution of Average Motivator Ratings by Regulatory Orientation Category",
+         y = "Average Rating",
+         x = "Motivator") +
+    scale_fill_brewer(palette = "Set1") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          legend.title = element_blank(),
+          legend.position = "top") +
+    ylim(0, 5)
+
+ggplot(
+  survey_completed %>%
+    filter(Reg_Orientation_Cat != "NA") %>%
+    group_by(Reg_Orientation_Cat) %>%
+    summarise(
+      Openness_To_Change = mean(Openness_To_Change, na.rm = TRUE),
+      Self_Enhancement = mean(Self_Enhancement, na.rm = TRUE),
+      Continuity = mean(Continuity, na.rm = TRUE),
+      Self_Transcendence = mean(Self_Transcendence, na.rm = TRUE),
+      Security = mean(Security, na.rm = TRUE),
+      Teaching = mean(Teaching, na.rm = TRUE) 
+    ) %>%
+    tidyr::pivot_longer(cols = -Reg_Orientation_Cat, 
+                        names_to = "Motivator", 
+                        values_to = "Average"),
+  aes(x = Reg_Orientation_Cat, y = Average, fill = Motivator)
+) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", Average), group=Motivator),
+            position = position_dodge(width = 0.7), 
+            vjust = -0.5, size = 3) +
+  labs(title = "Distribution of Average Motivator Ratings by Regulatory Orientation Category",
+       y = "Average Rating",
+       x = "Regulatory Orientation Category") +
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "top") +
+  ylim(0, 5)
+
+motivators <- c("Openness_To_Change", "Self_Enhancement", "Continuity", 
+                "Self_Transcendence", "Security", "Teaching")
+
+sapply(motivators, function(motivator) {
+  p_value <- summary(lm(data = survey_completed, formula = as.formula(paste(motivator, "~ Reg_Orientation"))))$coefficients[2, 4]
+  cat("Motivator:", motivator, "\tP-value:", p_value, "\n")
+  p_value
+})
+
+```
+Unlike what was expected, various orientations value motivators similarly, where the difference in security rating which was expected to be higher for prevention oriented users is mild.
+Completing a quick regression analysis shows no significant relationships, where the p value for each motivator was much higher than 0.05
+
+
+### Messages
+
+
+```{r Messages, echo = FALSE,}
+
+# Filtering data for users who have completed the survey
+recieved_msgs <- data %>% filter(Got_Msgs == TRUE)
+
+summary(data$Got_Msgs)
+
+summary(recieved_msgs %>% select(Msg_Type, Message_Group,Nmbr_Msgs_Sent, Nmbr_Msgs_Seen))
+```
+For the summer message experiment out of **265,227** **237** got messages, of which **217** have completed the survey.
+The final number is the one that is going to be used when checking message distribution in comparison with demographic data and Reg Focus
+
+From the summery, we can see that messages were distributed equally between the three sent types, there is discrepancy of when the users started their messaging treatment.
+**As the current data has is still incomplete as the treatment continues** the minimum number of messages received is 3 and the maximum is 13 since some users have received a repeated message.
+The number of messages seen (the user pressed on the message and entered the app to read it as a whole) varies with some not checking any and other all the messages, with the mean being **4.5** messages 
+
+#### Distribution
+```{r Message Disrtibution, echo = FALSE}
+data %>%
+  filter(Got_Msgs == TRUE) %>%
+  ggplot(aes(x = Msg_Type)) +
+  geom_bar(fill = "skyblue", show.legend = FALSE) +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Distribution of Message Type for Those Who Received Messages",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+data %>%
+  filter(Got_Msgs == TRUE, Complt_Survey == TRUE) %>%
+  ggplot(aes(x = Msg_Type)) +
+  geom_bar(fill = "skyblue", show.legend = FALSE) +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5) +
+  labs(title = "Distribution of Message Type for Those Who Received Messages & Completed the Survey",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The messages typeshave been distributed equally, however when considering comparing it to demographic variables, we have to keep in mind that not all of those who received messages have completed the survey. Those have completed the survey were by more likely to get a neutral message followed by promotion and then prevention.
+
+
+
+#### By Gender,Age & Year of Participation
+```{r Messaging Dis, echo = FALSE}
+survey_completed %>%
+  filter(Gender %in% c("Male", "Female")) %>%
+  group_by(Msg_Type, Gender) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Gender)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Gender in Each Message Type", y = "Percentage", x = "Message Type", fill = "Gender") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+
+survey_completed %>%
+  group_by(Msg_Type, Age_Group) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Age_Group)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Age Groups in Each Message Type", y = "Percentage", x = "Message Type", fill = "Age Group") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+
+survey_completed %>%
+  filter(!is.na(Msg_Type), !is.na(Participation_Date)) %>%
+  filter(Participation_Date %in% c('2023', '2022', '2021', '2020', '2019')) %>%
+  group_by(Msg_Type, Participation_Date) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Participation_Date)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Participation Date in Each Message Type", y = "Percentage", x = "Message Type", fill = "Participation Date") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+
+```
+
+Message Types seem to have been sent to similar proportions of users when considering Gender, however by chance neutral messages have been sent to *18-25** year olds at a higher rate than prevention or promotion messages, the percentage of **36-48** year olds who have received a promotion message is also higher than others.
+
+Average year of participation seems mostly similar.
+
+#### By Messaging Group
+```{r Messaging by Group, echo = FALSE}
+survey_completed %>%
+  filter(!is.na(Msg_Type), !is.na(Message_Group)) %>%
+  group_by(Msg_Type, Message_Group) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Message_Group)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Mesage Groups in Each Message Type", y = "Percentage", x = "Message Type", fill = "Message Group") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+```
+Message types also seem to have been distributed similarly for different messaging groups (time of start for messaging)
+
+
+#### Rate of checking messages
+Seeing that the message types were distributed mostly equally, we move on to check if the users who received them, have opened the app to read the complete text at a similar rate. From now on we will (unless mentioned otherwise) consider all those that have receieved messages and not only those that have fully completed the survey
+
+#### Average number of messages seen
+```{r Average seen messages, echo = FALSE}
+data %>%
+  filter(Got_Msgs) %>%
+  ggplot(aes(x = Msg_Type, y = Nmbr_Msgs_Seen, fill = Msg_Type)) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Average Message Reading Rate by Message Type (All Msg Recievers)",
+       x = "Message Type",
+       y = "Average Messages Seen") +
+  scale_fill_brewer(palette = "Set1") + 
+  geom_text(stat = "summary", fun = mean, aes(label = sprintf("%.2f", ..y..)), position = position_dodge(width = 0.9), vjust = -0.5) 
+
+data %>%
+  filter(Complt_Survey) %>%
+  ggplot(aes(x = Msg_Type, y = Nmbr_Msgs_Seen, fill = Msg_Type)) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Average Message Reading Rate by Message Type (Completed Survey)",
+       x = "Message Type",
+       y = "Average Messages Seen") +
+  scale_fill_brewer(palette = "Set1") + 
+  geom_text(stat = "summary", fun = mean, aes(label = sprintf("%.2f", ..y..)), position = position_dodge(width = 0.9), vjust = -0.5) 
+```
+
+From the average number of messages seen, we can see that the average rate is higher for promotion messages **4.95** than neutral **4.56**, and finally prevention messages having the lowest reception **4.03**.
+Note that when comparing the averages  for only those who have completed the entire survey, the number is average number of read messages is lower for all types.
+
+
+```{r Average seen messages ANOVA, echo = TRUE}
+anova_result <- aov(Nmbr_Msgs_Seen ~ Msg_Type, data = data %>% filter(Got_Msgs))
+summary(anova_result)
+rm(anova_result)
+```
+
+Doing a quick anova test shows that the there is no significant difference for the difference in messages seen with a P value of **0.467**
+
+
+#### Average number of messages seen when consiering messages sent
+```{r Average seen messages considering sent, echo = FALSE}
+data %>%
+  filter(Got_Msgs) %>%
+  ggplot(aes(x = Msg_Type, y = (Nmbr_Msgs_Seen / Nmbr_Msgs_Sent) *100, fill = Msg_Type)) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Average Message Reading Rate by Message Type",
+       x = "Message Type",
+       y = "Average Messages Seen") +
+  scale_fill_brewer(palette = "Set1") + 
+  geom_text(stat = "summary", fun = mean, aes(label = sprintf("%.2f", ..y..)), position = position_dodge(width = 0.9), vjust = -0.5) # Added to display the mean value on top of each bar
+
+#checking if there is a significant difference
+anova_result <- aov((Nmbr_Msgs_Seen / Nmbr_Msgs_Sent) * 100 ~ Msg_Type, data = data)
+summary(anova_result)
+rm(anova_result)
+```
+
+Considering that the treatment has not finished for some of the citizen scientists, we check the average rate of messages read when considering the number of messages sent per user.
+Although the P Value drops, the difference is still insignificant
+
+
+####  Number of messages seen as catagory
+```{r Average seen messages as catagory, echo = FALSE}
+data %>%
+  filter(Got_Msgs) %>%
+  mutate(seen_category = cut(Nmbr_Msgs_Seen,
+                             breaks = c(-1, 0, 4, 8, Inf), 
+                             labels = c("0 messages", "1-4 messages", "5-8 messages", "9+ messages"),
+                             right = TRUE)) %>%
+  ggplot(aes(x = Msg_Type, fill = seen_category)) + 
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  labs(title = "Number of Messages Seen by Users for Each Message Type",
+       x = "Message Group",
+       y = "Number of Users") +
+  scale_fill_brewer(palette = "Set3", name = "Messages Seen") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Lastly, looking at rates of messages seen as a category we see that the number of users, who checked 5-8 messages is almost identical between message types, while promotion messages have a higher rate of users that have seen at least a single message.
+
+
+#### Considering Messaging Groups
+
+We´ve checked earlier if the message types had equal proportions of participants from different groups, but before we check if the different groups have seen the messges at a similar rate lets check the distribution of users between different groups ie different messaging treatment start date
+```{r Message Groups Distribution, echo = FALSE}
+data %>% subset(Got_Msgs == TRUE) %>% 
+  ggplot(aes(x = Message_Group)) +
+  geom_bar(fill = "skyblue") + 
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
+  labs(title = "Distribution of Date of First message received",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal()
+```
+We see that the we´ve had a strong initial start, a drop at the beginning of July, and then another rise after fixing the push notification of the invites.
+Note that for future mosquito seasons, having the push notification functional with initial invites should yield better participation in surveys
+
+
+#### Average Message Reading Rate by Message Group
+
+```{r Average seen messages for Groups, echo = FALSE}
+data %>% subset(Got_Msgs == TRUE) %>% 
+  ggplot(aes(x = Message_Group)) +
+  geom_bar(fill = "skyblue") + 
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
+  labs(title = "Distribution of Date of First message received",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal()
+```
+
+When checking the interest rate of the messaging groups through the reate of seeing messages, we see that that the initial wave is the lowest, and the one From the first half of August stands out with a higher rate. We should note that the final 2 groups have not completed their treatment by the time of aquiring the data sets.
+
+#### Average Message Reading Rate by Message Group
+
+```{r proportion of seen messages for each Groups, echo = FALSE}
+data %>%
+  filter(Got_Msgs) %>%
+  mutate(seen_category = cut(Nmbr_Msgs_Seen,
+                             breaks = c(-1, 0, 4, 8, Inf), 
+                             labels = c("0 messages", "1-4 messages", "5-8 messages", "9+ messages"),
+                             right = TRUE)) %>%
+  group_by(Message_Group, seen_category) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sum(count) * 100) %>%
+  ggplot(aes(x = Message_Group, y = percentage, fill = seen_category)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(percentage/100, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "Black", size = 2.5) +
+  theme_minimal() +
+  labs(title = "Percentage of Messages Seen by Users for Each Message Group",
+       x = "Message Group",
+       y = "Percentage of Users") +
+  scale_fill_brewer(palette = "Set3", name = "Messages Seen") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Checking the proportions by message seen category we notice that the initial responders had a very high rate of users that have not entered the application to read completly any of the messages.
