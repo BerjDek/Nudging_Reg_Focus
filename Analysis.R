@@ -203,17 +203,16 @@ rm(average_data)
 
 
 # Melting the data for motivators
-motivators_melted <- survey_completed %>%
-  select(Openness_To_Change:Teaching) %>%
-  gather(key = "Motivator", value = "Score")
 
-# Boxplot for Motivators # give a written summery, 
-ggplot(motivators_melted, aes(x = Motivator, y = Score)) +
+
+survey_completed %>%
+  select(Openness_To_Change:Teaching) %>%
+  pivot_longer(cols = everything(), names_to = "Motivator", values_to = "Score") %>%
+  ggplot(aes(x = Motivator, y = Score)) +
   geom_boxplot() +
   labs(title = "Distribution of Scores for Different Motivators",
        x = "Motivator", y = "Score") +
   theme_minimal()
-rm(motivators_melted)
 
 #distribution of motivators by gender, seems both genders rate motivators equally.
 
@@ -399,7 +398,19 @@ sum(data$Complt_Survey)
 
 #as stated before 237 individuals received messages, out of which 217 completed the survey.
 
-filtered_data <- data[data$Got_Msgs, ]
+filtered_data <- data %>% 
+  filter(Got_Msgs == TRUE)
+
+ggplot(filtered_data, aes(x = Msg_Type)) +
+  geom_bar(fill = "skyblue", show.legend = FALSE) + 
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
+  labs(title = "Distribution of Message Type for Those Who Received Messages",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+filtered_data <- data[data$Got_Msgs & data$Complt_Survey, ]
 ggplot(filtered_data, aes(x = Msg_Type)) +
   geom_bar(fill = "skyblue") + 
   geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
@@ -408,15 +419,6 @@ ggplot(filtered_data, aes(x = Msg_Type)) +
        x = "Message Type") +
   theme_minimal()
 
-filtered_data <- data[data$Got_Msgs & data$Complt_Survey, ]
-
-ggplot(filtered_data, aes(x = Msg_Type)) +
-  geom_bar(fill = "skyblue") + 
-  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
-  labs(title = "Distribution of Message Type for Those Who Received Messages and Completed the Survey",
-       y = "Count",
-       x = "Message Type") +
-  theme_minimal()
 
 rm(filtered_data)
 
@@ -460,6 +462,23 @@ survey_completed %>%
   scale_fill_brewer(palette = "Set1") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+survey_completed %>%
+  filter(Gender %in% c("Male", "Female")) %>%
+  group_by(Msg_Type, Gender) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Gender)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Age Groups in Each Message Type", y = "Percentage", x = "Message Type", fill = "Age Group") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
 
 # the distribution of types of message seems similar between the sexes
 
@@ -530,43 +549,180 @@ ggplot(survey_completed %>%
   scale_y_continuous(limits = c(0, 100))
 
 
-
-
-
-#checking to see if the number of messages seen by users is different in the case of each message type, this checks all those that received a message
-msg_rate_data <- data %>%
-  filter(Got_Msgs == TRUE) %>%
-  mutate(Rate = ifelse(Nmbr_Msgs_Seen != 0, Nmbr_Msgs_Sent / Nmbr_Msgs_Seen, 0)) %>%
+survey_completed %>%
+  filter(!is.na(Msg_Type), !is.na(Participation_Date)) %>%
+  filter(Participation_Date %in% c('2023', '2022', '2021', '2020', '2019')) %>%
+  group_by(Msg_Type, Participation_Date) %>%
+  summarise(count = n()) %>%
   group_by(Msg_Type) %>%
-  summarise(Avg_Rate = mean(Rate, na.rm = TRUE))
-
-ggplot(msg_rate_data, aes(x = Msg_Type, y = Avg_Rate, fill = Msg_Type)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  geom_text(aes(label = sprintf("%.2f", Avg_Rate), y = Avg_Rate + 0.02), position = position_dodge(width=0.9), size=3, vjust = -0.5) +
-  labs(title = "Average Message Reading Rate by Message Type",
-       x = "Message Type",
-       y = "Average Rate Messages Seen") +
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Participation_Date)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Age Groups in Each Message Type", y = "Percentage", x = "Message Type", fill = "Age Group") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
   scale_fill_brewer(palette = "Set1")
 
 
-msg_rate_data <- data %>%
-  filter(Got_Msgs == TRUE) %>%
-  mutate(Rate = ifelse(Nmbr_Msgs_Seen != 0, Nmbr_Msgs_Sent / Nmbr_Msgs_Seen, 0)) 
 
-ggplot(msg_rate_data, aes(x = Msg_Type, y = Rate)) +
-  geom_boxplot(outlier.shape = NA) + 
-  geom_jitter(width = 0.3, alpha = 0.4, size = 1) + 
-  labs(title = "Distribution of Message Rate by Message Type",
-       x = "Message Type",
-       y = "Rate (Nmbr_Msgs_Sent / Nmbr_Msgs_Seen)") +
+#check if they are from the same messaging group
+survey_completed %>%
+  filter(!is.na(Msg_Type), !is.na(Message_Group)) %>%
+  group_by(Msg_Type, Message_Group) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Message_Group)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Age Groups in Each Message Type", y = "Percentage", x = "Message Type", fill = "Age Group") +
   theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+
+#checking to see if the number of messages seen by users is different in the case of each message type, 
+
+#for those that Got Messages
+
+
+#average number of messages seen
+
+data %>%
+  filter(Got_Msgs) %>%
+  ggplot(aes(x = Msg_Type, y = Nmbr_Msgs_Seen, fill = Msg_Type)) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Average Message Reading Rate by Message Type (All Msg Recievers)",
+       x = "Message Type",
+       y = "Average Messages Seen") +
+  scale_fill_brewer(palette = "Set1") + 
+  geom_text(stat = "summary", fun = mean, aes(label = sprintf("%.2f", ..y..)), position = position_dodge(width = 0.9), vjust = -0.5) 
+
+
+anova_result <- aov(Nmbr_Msgs_Seen ~ Msg_Type, data = data %>% filter(Got_Msgs))
+summary(anova_result)
+posthoc <- TukeyHSD(anova_result)
+print(posthoc)
+rm(anova_result,posthoc)
+
+
+#The average message reading rate  when compared to the number of messages sent
+
+data %>%
+  filter(Got_Msgs) %>%
+  ggplot(aes(x = Msg_Type, y = (Nmbr_Msgs_Seen / Nmbr_Msgs_Sent) *100, fill = Msg_Type)) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Average Message Reading Rate by Message Type",
+       x = "Message Type",
+       y = "Average Messages Seen") +
+  scale_fill_brewer(palette = "Set1") + 
+  geom_text(stat = "summary", fun = mean, aes(label = sprintf("%.2f", ..y..)), position = position_dodge(width = 0.9), vjust = -0.5) # Added to display the mean value on top of each bar
+
+#checking if there is a significant difference
+anova_result <- aov((Nmbr_Msgs_Seen / Nmbr_Msgs_Sent) * 100 ~ Msg_Type, data = data)
+summary(anova_result)
+
+posthoc <- TukeyHSD(anova_result)
+print(posthoc)
+
+rm(anova_result, posthoc)
+#no significant difference in checking messages
+
+#number of users seeing the messages for each message type
+
+data %>%
+  filter(Got_Msgs) %>%
+  mutate(seen_category = cut(Nmbr_Msgs_Seen,
+                             breaks = c(-1, 0, 4, 8, Inf), 
+                             labels = c("0 messages", "1-4 messages", "5-8 messages", "9+ messages"),
+                             right = TRUE)) %>%
+  ggplot(aes(x = Msg_Type, fill = seen_category)) + 
+  geom_bar(position = "dodge") +
+  theme_minimal() +
+  labs(title = "Number of Messages Seen by Users for Each Message Type",
+       x = "Message Group",
+       y = "Number of Users") +
+  scale_fill_brewer(palette = "Set3", name = "Messages Seen") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-rm(msg_rate_data)
 
-#The messages seem to be read at a very low rate (the median is 1 for all) but not that differently based on type. 
+
+
+
+
+
+
+
+## message seen by message group
+
+
+
+data %>% subset(Got_Msgs == TRUE) %>% 
+  ggplot(aes(x = Message_Group)) +
+  geom_bar(fill = "skyblue") + 
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
+  labs(title = "Distribution of Date of First message received",
+       y = "Count",
+       x = "Message Type") +
+  theme_minimal()
+
+
+# Average Message Reading Rate by Message Group
+
+data %>%
+  filter(Got_Msgs) %>%
+  ggplot(aes(x = Message_Group, y = Nmbr_Msgs_Seen, fill = Message_Group)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  theme_minimal() +
+  labs(title = "Average Message Reading Rate by Message Group",
+       x = "Message Group",
+       y = "Average Messages Seen") +
+  scale_fill_brewer(palette = "Set1", guide = "none") + 
+  geom_text(stat = "summary", fun = mean, aes(label = sprintf("%.2f", ..y..)), position = position_dodge(width = 0.9), vjust = -0.5)
+
+
+
+
+###here
+#proportion of users that saw the messages based on group
+
+data %>%
+  filter(Got_Msgs) %>%
+  mutate(seen_category = cut(Nmbr_Msgs_Seen,
+                             breaks = c(-1, 0, 4, 8, Inf), 
+                             labels = c("0 messages", "1-4 messages", "5-8 messages", "9+ messages"),
+                             right = TRUE)) %>%
+  group_by(Message_Group, seen_category) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sum(count) * 100) %>%
+  ggplot(aes(x = Message_Group, y = percentage, fill = seen_category)) + 
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(percentage/100, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "Black", size = 2.5) +
+  theme_minimal() +
+  labs(title = "Percentage of Messages Seen by Users for Each Message Group",
+       x = "Message Group",
+       y = "Percentage of Users") +
+  scale_fill_brewer(palette = "Set3", name = "Messages Seen") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+
+
+
+
+
+#fix order of msg group, check if seen averages are significant, check if time of messaging is significant.
+#check if the message and the personality alligning meant any ifference for the reporting
+
+
+
 
 
 
@@ -595,14 +751,7 @@ survey_completed %>%
 #Distribution of Messaging Start Date
 
 
-data %>% subset(Got_Msgs == TRUE) %>% 
-ggplot(aes(x = factor(Message_Group, levels = c("June1", "June2", "July1", "July2", "Aug1", "Aug2", "Sept1", "Sept2")))) +
-  geom_bar(fill = "skyblue") + 
-  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
-  labs(title = "Distribution of Date of First message received",
-       y = "Count",
-       x = "Message Type") +
-  theme_minimal()
+
 
 
 
