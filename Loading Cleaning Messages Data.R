@@ -52,14 +52,14 @@ message_data <- raw_message_data %>%
 message_data <- message_data %>%
   mutate(
     Message_Group = case_when(
-      month(First_Msg_Date) == 6 & day(First_Msg_Date) <= 14 ~ "June1",
-      month(First_Msg_Date) == 6 & day(First_Msg_Date) > 14 ~ "June2",
-      month(First_Msg_Date) == 7 & day(First_Msg_Date) <= 14 ~ "July1",
-      month(First_Msg_Date) == 7 & day(First_Msg_Date) > 14 ~ "July2",
-      month(First_Msg_Date) == 8 & day(First_Msg_Date) <= 14 ~ "Aug1",
-      month(First_Msg_Date) == 8 & day(First_Msg_Date) > 14 ~ "Aug2",
-      month(First_Msg_Date) == 9 & day(First_Msg_Date) <= 14 ~ "Sept1",
-      month(First_Msg_Date) == 9 & day(First_Msg_Date) > 14 ~ "Sept2",
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) <= 14 ~ "A-June1",
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) > 14 ~ "B-June2",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) <= 14 ~ "C-July1",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) > 14 ~ "D-July2",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) <= 14 ~ "E-Aug1",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) > 14 ~ "F-Aug2",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) <= 14 ~ "G-Sept1",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) > 14 ~ "H-Sept2",
       TRUE ~ NA_character_
     )
   ) %>% 

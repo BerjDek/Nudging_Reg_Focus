@@ -484,27 +484,6 @@ survey_completed %>%
 
 
 #distribution by age group
-survey_completed %>%
-  filter(!is.na(Msg_Type), !is.na(Age_Group)) %>%
-  group_by(Age_Group) %>%
-  mutate(total_age_group = n()) %>%
-  group_by(Msg_Type, Age_Group, total_age_group) %>%
-  summarise(count = n()) %>%
-  ungroup() %>%
-  mutate(percentage = (count / total_age_group) * 100) %>%
-  ggplot(aes(x = fct_infreq(Msg_Type))) +
-  geom_bar(aes(y = percentage, fill = Age_Group), stat = "identity", position = "dodge", color = "white") +
-  geom_text(aes(y = percentage, label = scales::percent(percentage/100, accuracy = 1), group = Age_Group),
-            vjust = -0.5, position = position_dodge(width = 0.9)) +
-  labs(title = "Distribution of Msg_Type by Age Group", 
-       x = "Msg_Type", 
-       y = "Percentage") +
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  scale_fill_brewer(palette = "Set1") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
 
 survey_completed %>%
   group_by(Msg_Type, Age_Group) %>%
@@ -519,35 +498,30 @@ survey_completed %>%
   theme_minimal() +
   scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
   scale_fill_brewer(palette = "Set1")
-
-
 #by chance a the youngest group made of 13 individuals were assigned mostly to neutral messaging, the proportion seem mostly similar except for 
 #large chunk of neutral being younger than 25
 
 
-#also by year the distribution seems mostly similar between message types. 
-ggplot(survey_completed %>%
-         filter(!is.na(Msg_Type), !is.na(Participation_Date)) %>%
-         filter(Participation_Date %in% c('2023', '2022', '2021', '2020', '2019')) %>%
-         group_by(Participation_Date, Msg_Type) %>%
-         summarise(Count = n()) %>%
-         group_by(Participation_Date) %>%
-         mutate(Total = sum(Count)) %>%
-         mutate(Percentage = Count / Total * 100) %>%
-         ungroup() %>%
-         select(Participation_Date, Msg_Type, Count, Total, Percentage), 
-       aes(x = factor(Participation_Date, levels = c("2023", "2022", "2021", "2020", "2019")), 
-           y = Percentage, fill = Msg_Type)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  geom_text(aes(label = sprintf("%.1f%%", Percentage), y = Percentage + 2), position = position_dodge(width=0.9), size=2) +
-  labs(title = "Distribution of Msg_Type by Participation Year",
-       x = "Participation Year",
-       y = "Percentage") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_fill_brewer(palette = "Set1") +
-  scale_y_continuous(limits = c(0, 100))
 
+
+#Distribution of messages  based on regulatory focus orientation
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat)) %>%
+  group_by(Msg_Type, Reg_Orientation_Cat) %>%
+  summarise(count = n()) %>%
+  group_by(Msg_Type) %>%
+  mutate(proportion = count / sum(count)) %>% 
+  ggplot(aes(x = Msg_Type, y = proportion, fill = Reg_Orientation_Cat)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
+            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
+  labs(title = "Distribution of Reg_Orientation_Cat in Each Message Type", y = "Percentage", x = "Message Type", fill = "Reg_Orientation_Cat") +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
+  scale_fill_brewer(palette = "Set1")
+
+
+#Distribution of messages  based on participation year
 
 survey_completed %>%
   filter(!is.na(Msg_Type), !is.na(Participation_Date)) %>%
@@ -564,10 +538,10 @@ survey_completed %>%
   theme_minimal() +
   scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
   scale_fill_brewer(palette = "Set1")
+#also by year of participation the distribution seems mostly similar between message types. 
 
 
-
-#check if they are from the same messaging group
+#Distribution of messages  based on messaging group
 survey_completed %>%
   filter(!is.na(Msg_Type), !is.na(Message_Group)) %>%
   group_by(Msg_Type, Message_Group) %>%
@@ -583,10 +557,13 @@ survey_completed %>%
   scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
   scale_fill_brewer(palette = "Set1")
 
+
+
+
+
+
 #checking to see if the number of messages seen by users is different in the case of each message type, 
-
-#for those that Got Messages
-
+#for those that Got Messages (for those with only surevey added to markdown)
 
 #average number of messages seen
 
@@ -632,7 +609,9 @@ print(posthoc)
 rm(anova_result, posthoc)
 #no significant difference in checking messages
 
-#number of users seeing the messages for each message type
+
+
+#number of messages seen as categories for each message type
 
 data %>%
   filter(Got_Msgs) %>%
@@ -642,19 +621,41 @@ data %>%
                              right = TRUE)) %>%
   ggplot(aes(x = Msg_Type, fill = seen_category)) + 
   geom_bar(position = "dodge") +
+  geom_text(stat = 'count', aes(label = ..count..), position = position_dodge(width = 1), vjust = -0.5) +
   theme_minimal() +
-  labs(title = "Number of Messages Seen by Users for Each Message Type",
-       x = "Message Group",
+  labs(x = "Message Group",
        y = "Number of Users") +
-  scale_fill_brewer(palette = "Set3", name = "Messages Seen") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  scale_fill_brewer(palette = "Set1", name = "Messages Seen") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 
 
 
 
+### Difference in Messages Seen by Regulatory Focus orientation
+data %>%
+  filter(Got_Msgs, !is.na(Reg_Orientation_Cat)) %>%
+  group_by(Reg_Orientation_Cat, Msg_Type) %>%
+  summarise(Avg_Msgs_Seen = mean(Nmbr_Msgs_Seen, na.rm = TRUE), .groups = 'drop') %>%
+  ggplot(aes(x = Reg_Orientation_Cat, y = Avg_Msgs_Seen, fill = Msg_Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Average Messages Seen by Regulatory Focus and Message Type",
+       x = "Regulatory Focus Category",
+       y = "Average Number of Messages Seen") +
+  scale_fill_brewer(palette = "Set1") +
+  geom_text(aes(label = sprintf("%.2f", Avg_Msgs_Seen)), position = position_dodge(width = 0.9), vjust = -0.5)
 
 
+### Anova
 
+test <- data %>%
+  filter(!is.na(Reg_Orientation_Cat)) %>%
+  group_by(Reg_Orientation_Cat, Msg_Type) %>%
+  summarise(Avg_Msgs_Seen = mean(Nmbr_Msgs_Seen, na.rm = TRUE), .groups = 'drop') %>%
+  aov(Avg_Msgs_Seen ~ Reg_Orientation_Cat + Msg_Type + Reg_Orientation_Cat:Msg_Type, data = .)
+
+summary(test)
+rm(test)
 
 
 ## message seen by message group
@@ -718,41 +719,33 @@ data %>%
 
 
 
-#fix order of msg group, check if seen averages are significant, check if time of messaging is significant.
-#check if the message and the personality alligning meant any ifference for the reporting
+# check if seen averages are significant, check if time of messaging is significant.
 
 
 
 
 
 
-#Distribution of messages  based on regulatory focus orientation
 
-survey_completed %>%
-  filter(!is.na(Reg_Orientation_Cat)) %>%
-  group_by(Msg_Type, Reg_Orientation_Cat) %>%
-  summarise(count = n()) %>%
-  group_by(Msg_Type) %>%
-  mutate(proportion = count / sum(count)) %>% 
-  ggplot(aes(x = Msg_Type, y = proportion, fill = Reg_Orientation_Cat)) +
-  geom_bar(stat = "identity", position = "stack") +
-  geom_text(aes(label = scales::percent(proportion, accuracy = 1)), 
-            position = position_stack(vjust = 0.5), color = "white", size = 3.5) +
-  labs(title = "Distribution of Reg_Orientation_Cat in Each Message Type", y = "Percentage", x = "Message Type", fill = "Reg_Orientation_Cat") +
-  theme_minimal() +
-  scale_y_continuous(labels = scales::percent_format(scale = 100, accuracy = 10)) +
-  scale_fill_brewer(palette = "Set1")
+
 
 #The distribution seems similar, ironically less neutral oriented users out of the 24 seem to have been randomly chosen to get neutral messages
 
 
 
 
-#Distribution of Messaging Start Date
 
 
 
 
+
+
+
+
+
+
+
+#check if the message and the personality alligning meant any ifference for the reporting
 
 
 

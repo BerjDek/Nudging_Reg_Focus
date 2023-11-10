@@ -2,7 +2,6 @@
 
 library(tidyverse)
 
-
 #loading Data
 
 raw_survey_data <- read.csv("Results.csv")

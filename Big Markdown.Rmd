@@ -417,7 +417,7 @@ The vast majority have no acquaintances also participating, and are not part of 
 The majority of participants are also as expected recent recruits from 2023 (**72**), and the participation drops as the the years go back (**54,40,21,10.....**)
 
 ### Age Distribution
-```{r age, echo = FALSE,}
+```{r age, echo = FALSE, warning=FALSE}
 ggplot(survey_completed, aes(x = Age)) +
   geom_histogram(binwidth = 5, fill = "skyblue", color = "white") +
   geom_vline(aes(xintercept = mean(Age, na.rm = TRUE)), color = "black", linetype = "dashed", size = 1) +
@@ -430,7 +430,7 @@ ggplot(survey_completed, aes(x = Age)) +
 
 ### Gender Distribution
 
-```{r gender, echo = FALSE,}
+```{r gender, echo = FALSE, warning=FALSE}
 ggplot(survey_completed, aes(x = reorder(Gender, -table(survey_completed$Gender)[Gender])))+
   geom_bar(fill = "skyblue", color = "white") +
   geom_text(stat='count', aes(label=..count..), vjust=-0.5) +
@@ -455,7 +455,7 @@ Regarding the motivators, the two highest means were for Self Transcendence **4.
 
 ### Regulatory Focus Disrtibution 
 
-```{r Reg Focus Disrtibution, echo = FALSE,}
+```{r Reg Focus Disrtibution, echo = FALSE, warning=FALSE}
 survey_completed %>%
   filter(!is.na(Reg_Orientation_Cat)) %>%
   ggplot(aes(x = fct_infreq(Reg_Orientation_Cat))) +
@@ -494,11 +494,12 @@ survey_completed %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-The distribution seems mostly equal between genders, interesting that males seem to be promotion oriented at a level higher than women, relating to the findings in earlier research for disposition of women to care about public health issues at a higher rate
+The distribution seems mostly equal between genders
 
 
 
 #### By Age Group
+
 ```{r Reg Focus Age Disrtibution, echo = FALSE, warning=FALSE}
 survey_completed %>%
   filter(!is.na(Reg_Orientation_Cat), !is.na(Age_Group)) %>%
@@ -520,10 +521,11 @@ survey_completed %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-Distribution seems in general similar to the general distribution with prevention being a third higher than promotion orientation. The thing that stand out seem to be lack of **8-25** age group in neutral and higher representation in prevention, and a higher percentage of promotion orientation than usual for  **36-48** year segment
+Distribution seems in general similar to the general distribution with prevention being a third higher than promotion orientation. The thing that stand out seem to be lack of **8-25** age group in neutral and higher representation in prevention, and a higher percentage of promotion orientation than usual for  **36-48** year segment.
 
 
 #### By Year of Initial Participation
+
 ```{r Reg Focus participation year Disrtibution, echo = FALSE}
 survey_completed %>%
   filter(!is.na(Reg_Orientation_Cat), !is.na(Participation_Date)) %>%
@@ -548,10 +550,11 @@ survey_completed %>%
 
 ```
 
-It seems regardless of the major campaign this year the project seems to attract a higher percentage  prevention orientation individuals in general. The only year where we attract equal percentages is 2021, this might be due to the country of sign-ups, which should be clearer whith visualizing the distribution by country
+It seems regardless of the major campaign this year the project seems to attract a higher percentage  prevention orientation individuals in general. The only year where we attract equal percentages is 2021, this might be due to the country of sign-ups, which should be clearer whith visualizing the distribution by country.
 
 
 #### By Country
+
 ```{r Reg Focus participation Country Disrtibution, echo = FALSE}
 survey_completed %>%
   filter(!is.na(Reg_Orientation_Cat), !is.na(Country)) %>% 
@@ -582,7 +585,6 @@ As expected the Netherlands has the biggest discrepancy of promotion oriented in
 ### Motivation Disrtibution 
 
 ```{r Motivation Disrtibution, echo = FALSE, warning=FALSE}
-
 survey_completed %>%
   summarise(
     Openness_To_Change = mean(Openness_To_Change, na.rm = TRUE),
@@ -615,7 +617,6 @@ survey_completed %>%
   labs(title = "Distribution of Scores for Different Motivators",
        x = "Motivator", y = "Score") +
   theme_minimal()
-
 ```
 
 #### By Gender
@@ -687,10 +688,11 @@ survey_completed %>%
           legend.position = "top") +
     ylim(0, 5)
 ```
-
+Age groups mostly agree as well and are similar in their judgment of various motivators
 
 
 #### By Regulatory Focus
+
 ```{r Motivation by Regulatory Focus, echo = FALSE}
 survey_completed %>%
   filter(Reg_Orientation_Cat != "NA") %>%
@@ -892,7 +894,7 @@ Message types also seem to have been distributed similarly for different messagi
 
 
 #### Rate of checking messages
-Seeing that the message types were distributed mostly equally, we move on to check if the users who received them, have opened the app to read the complete text at a similar rate. From now on we will (unless mentioned otherwise) consider all those that have receieved messages and not only those that have fully completed the survey
+Seeing that the message types were distributed mostly equally, we move on to check if the users who received them, have opened the app to read the complete text at a similar rate. From now on we will (unless mentioned otherwise) consider all those that have receieved messages and not only those that have fully completed the survey.
 
 #### Average number of messages seen
 ```{r Average seen messages, echo = FALSE}
@@ -929,7 +931,7 @@ summary(anova_result)
 rm(anova_result)
 ```
 
-Doing a quick anova test shows that the there is no significant difference for the difference in messages seen with a P value of **0.467**
+Doing a quick anova test shows that the there is no significant difference for the difference in messages seen with a P value of **0.467**.
 
 
 #### Average number of messages seen when consiering messages sent
@@ -952,7 +954,7 @@ rm(anova_result)
 ```
 
 Considering that the treatment has not finished for some of the citizen scientists, we check the average rate of messages read when considering the number of messages sent per user.
-Although the P Value drops, the difference is still insignificant
+Although the P Value drops, the difference is still insignificant.
 
 
 ####  Number of messages seen as catagory
@@ -996,17 +998,19 @@ Note that for future mosquito seasons, having the push notification functional w
 #### Average Message Reading Rate by Message Group
 
 ```{r Average seen messages for Groups, echo = FALSE}
-data %>% subset(Got_Msgs == TRUE) %>% 
-  ggplot(aes(x = Message_Group)) +
-  geom_bar(fill = "skyblue") + 
-  geom_text(stat='count', aes(label=..count..), vjust=-0.5) + 
-  labs(title = "Distribution of Date of First message received",
-       y = "Count",
-       x = "Message Type") +
-  theme_minimal()
+data %>%
+  filter(Got_Msgs) %>%
+  ggplot(aes(x = Message_Group, y = Nmbr_Msgs_Seen, fill = Message_Group)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  theme_minimal() +
+  labs(title = "Average Message Reading Rate by Message Group",
+       x = "Message Group",
+       y = "Average Messages Seen") +
+  scale_fill_brewer(palette = "Set1", guide = "none") + 
+  geom_text(stat = "summary", fun = mean, aes(label = sprintf("%.2f", ..y..)), position = position_dodge(width = 0.9), vjust = -0.5)
 ```
 
-When checking the interest rate of the messaging groups through the reate of seeing messages, we see that that the initial wave is the lowest, and the one From the first half of August stands out with a higher rate. We should note that the final 2 groups have not completed their treatment by the time of aquiring the data sets.
+When checking the interest rate of the messaging groups through the reate of seeing messages, we see that that the initial wave is the lowest, and the one From the first half of August stands out with a higher rate. We should note that the final 2 groups have not completed their treatment by the time of acquiring the data sets.
 
 #### Average Message Reading Rate by Message Group
 
@@ -1032,4 +1036,4 @@ data %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Checking the proportions by message seen category we notice that the initial responders had a very high rate of users that have not entered the application to read completly any of the messages.
+Checking the proportions by message seen category we notice that the initial respondents had a very high rate of users that have not entered the application to read completely any of the messages.
