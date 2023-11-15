@@ -4,7 +4,7 @@ library(tidyverse)
 
 #load message Data
 raw_message_data <- read.csv(file="all_messages.csv", header = TRUE)
-#seperate notifacation column to type language and msg_nmbr
+#separate notification column to type language and msg_nmbr
 raw_message_data <- raw_message_data %>% separate(notification_label, c('type','language','msg_nmbr'))
 #change the message date to simple date
 raw_message_data <- raw_message_data %>% 
@@ -75,4 +75,14 @@ message_data <- message_data %>%
 filtered_message_data <- message_data %>%
   filter(User_ID %in% survey_data$User_ID)
 
+
+
+
+long_message_data <- raw_message_data %>%
+  filter(year(Msg_Date) == 2023) %>% 
+  select(User_ID,Msg_Date,type,read_notification,Msg_Nmbr) %>% 
+  rename(Msg_Type = type,
+         Msg_Seen = read_notification) %>% 
+  mutate(Msg_Type = as.factor(Msg_Type),
+         Msg_Seen = ifelse(Msg_Seen == "t", 1, 0))
 

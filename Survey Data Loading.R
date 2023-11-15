@@ -1,6 +1,9 @@
 # Loading Library
 
 library(tidyverse)
+library(car)
+library(scales)
+library(broom)
 
 #loading Data
 
