@@ -160,3 +160,60 @@ rm(motivation_data, two_way_anova_result, security_data, t_test_results)
 
 #When completing a t-test to check as an example supposedly the most important motivator for those who are prevention oriented, although we see a 
 # slightly higher mean rating given than that of promotion-oriented ones, the difference isn't significant with p =  0.0876
+
+
+
+
+
+#Power analysis for Messaging (ignore)
+
+#For conducting a two-sample t-test we'd need to compare two means of filled reports for this season between those who got messages and those who didn't, 
+#for high statistical power 0.8 (Common in Social sciences, 80% chance of detecting an effect), and 0.05 significance level. we need more than  users. 
+#
+
+#For conducting a paired t-test we'd need to compare two means of filled report by the same users in two different times (seasonal, before/after messaging)
+ 
+#Lastly to conducting ANOVA for a comparison of the three message types
+
+# Define the parameters for the power analysis
+effect_size <- 0.3 # medium effect size 
+power <- 0.8
+significance_level <- 0.05
+n_groups <- 2 # for a t-test, there are two groups being compared
+
+# Calculate the sample size required for the given parameters
+pwr_result <- pwr.t.test(d = effect_size, power = power, sig.level = significance_level, type = "two.sample", alternative = "two.sided")
+
+print(pwr_result)
+rm(effect_size,power,significance_level,n_groups, pwr_result)
+
+
+
+
+# Impact of Messaging year to year
+
+#when considering users who were existent and signed up prior to 2023, we compare if there was a difference in the average number of reports they filled
+#during the seasons of 2022 and 2023, ie without messgaes and with messages
+# we use a paired samples t-test
+
+r <- recieved_msgs %>%
+  filter(Registered_Participation_Date < as.Date('2023-01-01'))
+
+paired_t_test_result <- with(r, t.test(Season_Rprts_Filled, Season_Rprts_Filled_2022,  paired = TRUE))
+print(paired_t_test_result)
+
+t <- recieved_msgs %>%
+  filter(Registered_Participation_Date < as.Date('2022-01-01'))
+
+paired_t_test_result <- with(t, t.test(Season_Rprts_Filled_2022, Season_Rprts_Filled_2021,  paired = TRUE))
+
+
+# analysis revealed a significant increase in the average number of reports filled by users who registered before 2023 after receiving messages, 
+#with the mean number of reports in the season of 2023 (25.35461) being significantly higher than in the season of 2022 (14.07092). The paired t-test 
+#showing a mean increase of 11.28369 (95% CI [3.72882, 18.83856], t(140) = -2.9529, p = 0.0037).
+# when repeat the t-test for comparison between the years 2022 and 2021 with users who signed up before 2022, we see that there is no significant 
+# difference p = 0.55 and in fact the average decreases a bit (-2.07) as expected, since users usually participate less often as time goes by
+
+
+#However the change in averages could have been due to intensity of the mosquito season itself. so we compare for all users the differences in averages
+#before during and after the messaging treatment.
