@@ -19,7 +19,7 @@ reports_data <- raw_reports_data %>%
          Rprt_Loc_Choice = location_choice,
          Rprt_Date = creation_time,
          Rprt_Type = type) %>% 
-  filter(User_ID != "" & Rprt_Date >= as.POSIXct("2020-10-02"))
+  filter(User_ID != "" & Rprt_Date >= as.POSIXct("2020-10-02") & Rprt_Date <= as.POSIXct("2023-12-31"))
 
 reports_data <- reports_data %>% mutate(Rprt_Type = as.factor(Rprt_Type),
                                         Rprt_Loc_Choice = as.factor(Rprt_Loc_Choice))
@@ -40,7 +40,7 @@ reports_data_summary <- reports_data %>%
             Site_Reports = sum(Rprt_Type == "site", na.rm = TRUE)) %>% 
   ungroup()
 
-
+write.csv(reports_data, "clean_reports_data.csv", row.names = FALSE)
 
 
 #Checking the seasonality of reports filled. 

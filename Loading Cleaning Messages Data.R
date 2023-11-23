@@ -65,6 +65,8 @@ message_data <- message_data %>%
   ) %>% 
   mutate(Message_Group = as.factor(Message_Group))
 
+write.csv(message_data, "clean_message_data.csv", row.names = FALSE)
+
 #The final count of users are 237 users that received messages, with 79 participants in each group.
 #The number corresponds with the Unique users that have initiated the survey and gave their consent
 

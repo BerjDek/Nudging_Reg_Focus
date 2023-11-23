@@ -37,6 +37,16 @@ rm(population_size,sample_size, confidence_level_constant, p,margin_of_error, ma
 #that they have seen and responded to the in-app invite. The results, therefore, should be generalized to the broader population of all app 
 #downloaders only with substantial caveats. 
 
+s3 <- survey_completed %>%
+  filter(!User_ID %in% c("fa099b57-da20-4e98-ab79-0c2615cac14e",
+                         "0eaa6fd0-99cd-4f57-aafb-f28b6d640ac8",
+                         "d4e820b3-e502-40c3-aff8-eeb9ef3955d0",
+                         "52279491-6446-42b5-96f5-9c9f25b17c9d",
+                         "c9faebc9-c286-4aef-ab99-65b2000a9ee1",
+                         "fd786e71-17af-44ed-81cd-59fba94d55b2",
+                         "f96a9713-4ffc-442d-b4b4-e402217f12b5",
+                         "be5e80f1-5494-4e32-a8f6-2cb5b8f8fc96",
+                         "4437b614-ec38-401b-9a0e-26c937933788"))
 
 
 #checking if the Regulatory focus Average is significant
@@ -62,7 +72,7 @@ rm(mean_reg_orientation, t_test_result)
 
 orientation_counts <- table(survey_completed$Reg_Orientation_Cat)
 orientation_counts <- orientation_counts[names(orientation_counts) != "NA"]
-
+orientation_counts
 chi_squared_test <- chisq.test(orientation_counts)
 print(chi_squared_test)
 
@@ -70,6 +80,7 @@ print(chi_squared_test)
 oriented_data <- subset(survey_completed, Reg_Orientation_Cat %in% c('Prevention-oriented', 'Promotion-oriented'))
 oriented_counts <- table(oriented_data$Reg_Orientation_Cat)
 oriented_counts <- oriented_counts[names(oriented_counts) != "Neutral"]
+oriented_counts
 
 # Since we expect the counts to be equal, the expected frequency for each is half of the total count
 total_expected_count <- sum(oriented_counts)
@@ -78,7 +89,7 @@ expected_counts <- rep(total_expected_count / 2, 2)
 chi_squared_test <- chisq.test(oriented_counts, p = rep(1/2, 2))
 print(chi_squared_test)
 
-rm(orientation_counts, chi_squared_test, oriented_data, total_expected_count, expected_counts)
+rm(orientation_counts, chi_squared_test, oriented_data, oriented_counts, total_expected_count, expected_counts)
 
 
 # The Chi-squared test is used to determine  whether the distribution of users across three regulatory orientation categories—
@@ -87,7 +98,7 @@ rm(orientation_counts, chi_squared_test, oriented_data, total_expected_count, ex
 #is significantly different from a uniform one
 
 # To further assess if the number of promotion-oriented users is significantly different from the number of prevention-oriented users we performed 
-# a Chi-squared test with the assumption that both categories should have equal numbers of participants, yeilded a significant  P-value of 0.0002
+# a Chi-squared test with the assumption that both categories should have equal numbers of participants, yielded a significant  P-value of 0.0002
 
 
 
@@ -119,14 +130,14 @@ cohen_d_self_transcendence
 cohen_d_Openness_To_Change
 rm(motivator_ratings, anova_result, tukey_result, SD_pooled, means, cohen_d_security, cohen_d_self_transcendence, cohen_d_Openness_To_Change)
 
-# ANOVA was used to determine if there are statistically significant differences in the means of the motivator ratings yeilding ap-value is less than 2e-16
+# ANOVA was used to determine if there are statistically significant differences in the means of the motivator ratings yielding a p-value  less than 2e-16
 # to determine which specific motivators differ from each other we followed it up with Tukey's Honest Significant Difference test
 # When compared to Continuity for example 'Security' (M = 2.47, 95% CI [2.21, 2.73], p < .0001) and 'Self_Transcendence' (M = 2.48, 95% CI [2.22, 2.75], 
 #p < .0001) emerged as the most valued motivators along with 'Openness To Change' also being rated significantly higher (M = 1.44, 95% CI [1.18, 1.70], 
 #p < .0001)
 #To highlight the importance of some motivators over others the effect sizes for each comparison was calculated using Cohen's d. The test showed that
 #Security and Self Transcendence were rated with notably higher importance compared to Continuity, Self Enhancement, and Teaching, with large effect sizes 
-#ranging from 2.09 to 2.91. Openness To Change was almost a midlle ground being almost equally distant from the highest and the lowest motviators
+#ranging from 2.09 to 2.91. Openness To Change was almost a middle ground being almost equally distant from the highest and the lowest motivators
 
 
 
@@ -158,7 +169,7 @@ rm(motivation_data, two_way_anova_result, security_data, t_test_results)
 # We already knew from above that there are significant differences in specific motivator ratings p = 2e-16 , however most importantly there does not seem
 # to be a significant impact of citizen scientist regulatory focus  on how they feel and rate each motivator p = 0.3818
 
-#When completing a t-test to check as an example supposedly the most important motivator for those who are prevention oriented, although we see a 
+#When completing a t-test to check as an example what should be the most important motivator for those who are prevention oriented, although we see a 
 # slightly higher mean rating given than that of promotion-oriented ones, the difference isn't significant with p =  0.0876
 
 
@@ -190,22 +201,37 @@ rm(effect_size,power,significance_level,n_groups, pwr_result)
 
 
 
-# Impact of Messaging year to year
+# Impact of Messaging year to year    #THIS WILL CHANGE IF OU CHANGE THE LIMIT OF YOUR SEASON DATES
 
 #when considering users who were existent and signed up prior to 2023, we compare if there was a difference in the average number of reports they filled
 #during the seasons of 2022 and 2023, ie without messgaes and with messages
 # we use a paired samples t-test
 
-r <- recieved_msgs %>%
+s4 <- recieved_msgs%>%
+  filter(!User_ID %in% c("fa099b57-da20-4e98-ab79-0c2615cac14e",
+                         "0eaa6fd0-99cd-4f57-aafb-f28b6d640ac8",
+                         "d4e820b3-e502-40c3-aff8-eeb9ef3955d0",
+                         "52279491-6446-42b5-96f5-9c9f25b17c9d",
+                         "c9faebc9-c286-4aef-ab99-65b2000a9ee1",
+                         "fd786e71-17af-44ed-81cd-59fba94d55b2",
+                         "f96a9713-4ffc-442d-b4b4-e402217f12b5",
+                         "be5e80f1-5494-4e32-a8f6-2cb5b8f8fc96",
+                         "4437b614-ec38-401b-9a0e-26c937933788"))
+
+
+
+r <- recieved_msgs  %>%
   filter(Registered_Participation_Date < as.Date('2023-01-01'))
 
 paired_t_test_result <- with(r, t.test(Season_Rprts_Filled, Season_Rprts_Filled_2022,  paired = TRUE))
 print(paired_t_test_result)
 
-t <- recieved_msgs %>%
+t <- recieved_msgs  %>%
   filter(Registered_Participation_Date < as.Date('2022-01-01'))
 
 paired_t_test_result <- with(t, t.test(Season_Rprts_Filled_2022, Season_Rprts_Filled_2021,  paired = TRUE))
+print(paired_t_test_result)
+rm(r,t,paired_t_test_result)
 
 
 # analysis revealed a significant increase in the average number of reports filled by users who registered before 2023 after receiving messages, 
@@ -215,5 +241,27 @@ paired_t_test_result <- with(t, t.test(Season_Rprts_Filled_2022, Season_Rprts_Fi
 # difference p = 0.55 and in fact the average decreases a bit (-2.07) as expected, since users usually participate less often as time goes by
 
 
-#However the change in averages could have been due to intensity of the mosquito season itself. so we compare for all users the differences in averages
+#However the change in averages could have been due to intensity of the mosquito season itself. So we compare for users who received messages the differences in averages
 #before during and after the messaging treatment.
+
+
+recieved_msgs %>% 
+  select(Rprts_Before_Msging, Rprts_During_Msging, Rprts_After_Msging) %>% 
+  summary()
+
+s4 %>% 
+  select(Rprts_Before_Msging, Rprts_During_Msging, Rprts_After_Msging) %>% 
+  summary()
+
+
+paired_t_test_result <- with(recieved_msgs, t.test(Rprts_During_Msging, Rprts_Before_Msging,  paired = TRUE))
+print(paired_t_test_result)
+
+
+#These statistics suggest an increase in the average number of reports filled during and after the messaging period compared to before. However, the standard 
+#deviation is also higher in these periods, indicating greater variability in user behavior.
+#To determine if these differences are statistically significant, we  perform a repeated measures ANOVA to compare participant report filling 
+#across different time points.
+
+long_data <- data %>% 
+  gather(key = "Time_Period", value = "Reports", Rprts_Before_Msging, Rprts_During_Msging, Rprts_After_Msging)

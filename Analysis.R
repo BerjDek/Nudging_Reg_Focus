@@ -2,7 +2,7 @@
 library(car)
 str(survey_completed)
 #Analysis of survey data
-
+data <- read.csv("loaddata.csv", header = TRUE)
 # Filtering data for users who have completed the survey
 survey_completed <- data %>% filter(Complt_Survey == TRUE)
 

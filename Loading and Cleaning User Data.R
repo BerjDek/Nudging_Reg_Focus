@@ -41,3 +41,5 @@ nrow(raw_user_data %>%
 
 user_data <- raw_user_data %>%
   filter(Registered_Participation_Date >= as.POSIXct("2020-10-02"))
+
+write.csv(user_data, "clean_user_data.csv", row.names = FALSE)

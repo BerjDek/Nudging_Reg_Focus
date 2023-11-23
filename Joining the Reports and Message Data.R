@@ -16,7 +16,7 @@ data_tall <- full_join(data_tall, reports_data, by = "User_ID")
 
 
 
-
+# original
 data_tall <- data_tall %>%
   group_by(User_ID) %>%
   mutate(Got_Msgs = !is.na(First_Msg_Date),
@@ -44,6 +44,35 @@ data_tall <- data_tall %>%
          Rprt_Loc_Usual_Choice = as.factor(names(which.max(table(Rprt_Loc_Choice))))) %>% 
   ungroup()
 
+
+
+#alternative
+data_tall <- data_tall %>%
+  group_by(User_ID) %>%
+  mutate(Got_Msgs = !is.na(First_Msg_Date),
+         Total_Rprts_Filled = n(),
+         Season_Rprts_Filled = sum(Rprt_Date >= "2023-05-01" & Rprt_Date <= "2023-10-30"),
+         Season_Rprts_Filled_2022 = sum(Rprt_Date >= "2022-05-01" & Rprt_Date <= "2022-10-30"),
+         Season_Rprts_Filled_2021 = sum(Rprt_Date >= "2021-05-01" & Rprt_Date <= "2021-10-30"),
+         Rprts_Filled_2023 = sum(Rprt_Date >= "2023-01-01"),
+         Rprts_Filled_2022 = sum(Rprt_Date >= "2022-01-01" & Rprt_Date <= "2022-12-31"),
+         Rprts_Filled_2021 = sum(Rprt_Date >= "2021-01-01" & Rprt_Date <= "2021-12-31"),
+         Total_Rprts_Segment = cut(Total_Rprts_Filled, breaks = c(-1, 0, 1, 10, 50, Inf),
+                                   labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),right = TRUE),
+         Seasonal_2023_Rprts_Segment = cut(Season_Rprts_Filled,breaks = c(-1, 0, 1, 10, 50, Inf),
+                                           labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),right = TRUE),
+         Seasonal_2022_Rprts_Segment = cut(Season_Rprts_Filled_2022, breaks = c(-1, 0, 1, 10, 50, Inf),
+                                           labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),right = TRUE),
+         Seasonal_2021_Rprts_Segment = cut(Season_Rprts_Filled_2021, breaks = c(-1, 0, 1, 10, 50, Inf),
+                                           labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),right = TRUE),
+         Total_Bite_Rprts_Filled = sum(Rprt_Type == "bite"),
+         Total_Adult_Rprts_Filled = sum(Rprt_Type == "adult"),
+         Total_Site_Rprts_Filled = sum(Rprt_Type == "site"),
+         Rprts_During_Msging = sum(Rprt_Date >= First_Msg_Date & Rprt_Date <= Last_Msg_Date, na.rm = TRUE),
+         Rprts_Before_Msging = sum(Rprt_Date >= (First_Msg_Date - days(37)) & Rprt_Date < First_Msg_Date, na.rm = TRUE),
+         Rprts_After_Msging = sum(Rprt_Date > Last_Msg_Date & Rprt_Date <= (Last_Msg_Date + days(37)), na.rm = TRUE),
+         Rprt_Loc_Usual_Choice = as.factor(names(which.max(table(Rprt_Loc_Choice))))) %>% 
+  ungroup()
 
 data_tall <- data_tall %>% 
   select(User_ID, Rprt_Date, Rprt_Loc_Choice,  Rprt_Type, Got_Msgs,Complt_Survey, Total_Rprts_Filled, Age, Age_Group, 
@@ -90,7 +119,7 @@ data <- data %>%
          Age , Age_Group, Gender, Country, Participation_Date, Registered_Participation_Date, everything())  
   
 str(data)       
-write.csv(data, "loaddata.csv")
+write.csv(data, "loaddata.csv", row.names = FALSE)
 
 
 survey_completed <- data %>% filter(Complt_Survey == TRUE)

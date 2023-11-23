@@ -1,10 +1,13 @@
 # Loading Library
+install.packages("pwr")
+
 
 library(tidyverse)
 library(car)
 library(scales)
 library(broom)
-
+library(pwr)
+library(lme4)
 #loading Data
 
 raw_survey_data <- read.csv("Results.csv")
@@ -161,7 +164,7 @@ str(survey_data)
 #making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is 237, 
 #confirming the validity of the Messaging Data
 
-
+write.csv(survey_data, "clean_survey_data.csv", row.names = FALSE)
 
 
 
