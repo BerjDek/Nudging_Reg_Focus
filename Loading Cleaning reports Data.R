@@ -26,8 +26,15 @@ reports_data <- reports_data %>% mutate(Rprt_Type = as.factor(Rprt_Type),
 
 min(reports_data$Rprt_Date, na.rm = TRUE)
 
+write.csv(reports_data, "CleanReportsData.csv", row.names = FALSE)
+
 
 #Since 12/10/2020 till the date of the analysis 144,832 reports have been filled.
+
+
+
+
+
 
 
 #Reports data is summarized by user id to merge it with a larger data set, additional fields are added to show number and type of reports by Users
@@ -40,7 +47,9 @@ reports_data_summary <- reports_data %>%
             Site_Reports = sum(Rprt_Type == "site", na.rm = TRUE)) %>% 
   ungroup()
 
-write.csv(reports_data, "clean_reports_data.csv", row.names = FALSE)
+
+rm(reports_data_summary)
+
 
 
 #Checking the seasonality of reports filled. 
@@ -58,5 +67,4 @@ reports_data %>%
 
 
 
-  str(data)
   

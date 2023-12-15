@@ -14,8 +14,11 @@ raw_message_data <- raw_message_data %>%
          Year = format(Msg_Date, "%Y")) %>%
   group_by(User_ID) %>%
   mutate(Repeat_User = n_distinct(Year) > 1) %>%
-  ungroup() %>%
-  select(-Year)
+  mutate(type = case_when(
+                          "Promotion" = "promotion",
+                          "Prevention" = "prevention",
+                          "Neutral" = "neutral")) %>% 
+  ungroup() 
 
 #first the data for messages were loaded into a data set called message_data_raw, the notification label was split in order to have 
 #separate columns for type, language and message number, column names changed to fit the style chosen for the survey data, and then 
@@ -39,14 +42,19 @@ message_data <- raw_message_data %>%
     Msg_Type = first(type),
     Repeat_User = first(Repeat_User),
     Msg_Lang = first(Msg_Lang),
-    First_Msg_Date = as.POSIXct(format(min(Msg_Date[msg_nmbr == 1]), "%Y-%m-%d")),
-    Last_Msg_Date = as.POSIXct(format(max(Msg_Date[msg_nmbr == max(msg_nmbr)]), "%Y-%m-%d")),
+    First_Msg_Date = as.POSIXct(format(min(Msg_Date), "%Y-%m-%d")),
+    Last_Msg_Date = as.POSIXct(format(max(Msg_Date), "%Y-%m-%d")),
+    First_Msg_Date = as.POSIXct(format(min(Msg_Date), "%Y-%m-%d")),
+    Last_Msg_Date = as.POSIXct(format(max(Msg_Date), "%Y-%m-%d")),
     Nmbr_Msgs_Sent = n(),
     Nmbr_Msgs_Seen = sum(read_notification == "t"),
-    Repeated_Msg_Nmbr = if (anyDuplicated(msg_nmbr) > 0) msg_nmbr[duplicated(msg_nmbr)] else NA
+    Msg_Duration_Days = as.integer(Last_Msg_Date - First_Msg_Date, units = "days")
   ) %>%
   ungroup() %>%
   mutate(Msg_Type = as.factor(Msg_Type))
+
+
+
 
 #creating Messaging group based on date of first message received.
 message_data <- message_data %>%
@@ -60,18 +68,25 @@ message_data <- message_data %>%
       month(First_Msg_Date) == 8 & day(First_Msg_Date) > 14 ~ "F-Aug2",
       month(First_Msg_Date) == 9 & day(First_Msg_Date) <= 14 ~ "G-Sept1",
       month(First_Msg_Date) == 9 & day(First_Msg_Date) > 14 ~ "H-Sept2",
+      month(First_Msg_Date) == 10 & day(First_Msg_Date) <= 14 ~ "I-Oct1",
+      month(First_Msg_Date) == 10 & day(First_Msg_Date) > 14 ~ "J-Oct2",
+      month(First_Msg_Date) == 11 & day(First_Msg_Date) <= 14 ~ "K-Nov1",
+      month(First_Msg_Date) == 10 & day(First_Msg_Date) > 14 ~ "L-Nov2",
       TRUE ~ NA_character_
     )
   ) %>% 
   mutate(Message_Group = as.factor(Message_Group))
 
-write.csv(message_data, "clean_message_data.csv", row.names = FALSE)
+write.csv(message_data, "CleanMessageData.csv", row.names = FALSE)
 
 #The final count of users are 237 users that received messages, with 79 participants in each group.
 #The number corresponds with the Unique users that have initiated the survey and gave their consent
 
 
 #just to check, downsizing the users to the ones that completed the whole survey, so to make sure they didn´t just click consent and were later uninterested
+
+
+
 
 
 filtered_message_data <- message_data %>%

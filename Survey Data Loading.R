@@ -1,6 +1,6 @@
 # Loading Library
 install.packages("pwr")
-
+install.packages("multcomp")
 
 library(tidyverse)
 library(car)
@@ -8,9 +8,11 @@ library(scales)
 library(broom)
 library(pwr)
 library(lme4)
+library(MASS)
+library(multcomp)
 #loading Data
 
-raw_survey_data <- read.csv("Results.csv")
+raw_survey_data <- read.csv("resultsss.csv")
 
 colnames(raw_survey_data)
 
@@ -104,9 +106,9 @@ raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+P
 # Adding categorical version of Reg_Orientation
 raw_survey_data <- raw_survey_data %>%
   mutate(Reg_Orientation_Cat = case_when(
-    Reg_Orientation < 0 ~ "Prevention-oriented",
+    Reg_Orientation < 0 ~ "Prevention",
     Reg_Orientation == 0 ~ "Neutral",
-    Reg_Orientation > 0 ~ "Promotion-oriented",
+    Reg_Orientation > 0 ~ "Promotion",
     TRUE ~ as.character(NA)  # For NAs
   ))
 raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation_Cat = as.factor(Reg_Orientation_Cat))
@@ -164,13 +166,13 @@ str(survey_data)
 #making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is 237, 
 #confirming the validity of the Messaging Data
 
-write.csv(survey_data, "clean_survey_data.csv", row.names = FALSE)
+write.csv(survey_data, "CleanSurveydDta.csv", row.names = FALSE)
 
 
 
 #Exploring the age of Participants
 
-mean(survey_data$Age, na.rm = TRUE) # average age is 48.72687
+mean(survey_data$Age, na.rm = TRUE) # average age is 48.55
 
 
 ggplot(survey_data, aes(x = Age_Group)) +
