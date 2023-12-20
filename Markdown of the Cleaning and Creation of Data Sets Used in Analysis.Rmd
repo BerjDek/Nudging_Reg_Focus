@@ -1,0 +1,530 @@
+---
+title: "Cleaning and Creation Data Sets Used in Analysis"
+author: "Berj Dekramanjian"
+date: "2023-12-20"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+
+```
+
+# Loaded Packages
+- tidyverse
+
+```{r Package, include=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+
+## Survey Data
+The raw data was downloaded as CSV from LimeSurvey, which was the platform used to conduct it.
+- The names of the columns were simplified
+- Questions referring to different motivators were assigned their respective motivator name
+- Dispositional/General Regulatory Orientation were numbered and divided between those gauging Promotion and Prevention.
+
+
+```{r Survey Data Loading and Renaming}
+raw_survey_data <- read.csv("results.csv")
+
+raw_survey_data <- raw_survey_data %>% rename( Language = Start.language,
+                                               Consent = I.GIVE.MY.CONSENT.to.participate.in.this.study.and.allow.the.use.of.data.generated.in.Mosquito.Alert.on.my.device.to.be.re.used.in.this.research.project..,
+                                               User_ID = user_UUID,
+                                               Age = How.old.are.you.,
+                                               Gender = What.is.your.gender.,
+                                               Country = What.is.the.country.you.currently.reside.in.,
+                                               Participation_Date = In.what.year.did.you.first.participate.in.Mosquito.Alert.,
+                                               Network = How.many.people.do.you.personally.know..acquaintances..friends..family.members.etc...who.are.participating.in.Mosquito.Alert..not.including.yourself..,
+                                               Other_Citi_Sci = Are.you.currently.engaged.in.other.citizen.science.projects.,
+                                               Self_Direction = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.am.interested.in.the.topic.of.this.project.,
+                                               Stimulation = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.challenge.myself.and.do.something.new.,
+                                               Hedonism = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.s.a.fun.activity.,
+                                               Achievement = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.s.an.opportunity.to.perform.better.than.others.,
+                                               Face = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.enhance.my.reputation.,
+                                               Security = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.live.in.safer.surroundings.,
+                                               Conformity = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....Other.people.I.know.are.participating..,
+                                               Benevolence = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.contribute.to.my.community.,
+                                               Universalism_Social = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.make.the.world.a.better.place.,
+                                               Universalism_Nature = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.protect.the.environment.,
+                                               Routine = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....It.is.part.of.my.routine.,
+                                               Social_Expansion = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.be.part.of.this.volunteers..community.,
+                                               Power =On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.gain.recognition.,
+                                               Help_Science = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.want.to.contribute.to.science.,
+                                               Teaching = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.use.it.to.teach.others.about.the.topic.,
+                                               Dislike = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.dislike.mosquitos..,
+                                               Env_Change = On.a.scale.of.1.to.5..please.rate.the.importance.of.the.following.reasons.for.your.participation.in.Mosquito.Alert..with.1.being.the.lowest.score.and.5.being.the.highest.score....I.noticed.an.increase.or.change.in.mosquitos.in.my.surroundings.,
+                                               Prom_1 = I.prefer.to.work.without.instructions.from.others.,
+                                               Prev_1 = Rules.and.regulations.are.helpful.and.necessary.for.me,
+                                               Prev_2 = For.me..it.is.very.important.to.carry.out.the.obligations.placed.on.me.,
+                                               Prom_2 = I.generally.solve.problems.creatively.,
+                                               Prev_3 = I.m.not.bothered.about.reviewing.or.checking.things.really.closely.,
+                                               Prom_3 = I.like.to.do.things.in.a.new.way.,
+                                               Prev_4 = I.always.try.to.make.my.work.as.accurate.and.error.free.as.possible.,
+                                               Prom_4 = I.like.trying.out.lots.of.different.things..and.am.often.successful.in.doing.so.,
+                                               Prom_5 = It.is.important.to.me.that.my.achievements.are.recognized.and.valued.by.other.people.,
+                                               Prev_5 = I.often.think.about.what.other.people.expect.of.me.)
+
+```
+
+Issues regarding various columns were addressed
+- "target=" which apeared at the end of some uuid's was removed
+- Empty entries for Country were converted
+- Reg Focus Responses were changed to Numeric to calculate Orientation
+- Participation in other Citizen sciense Projects was converted to a binary variable
+
+```{r Survey Data Column Format Fixing}
+
+raw_survey_data$User_ID <- sub(" target=", "", raw_survey_data$User_ID)
+
+
+raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "I prefer not to say", Country))
+
+
+raw_survey_data <- raw_survey_data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
+                                              Prom_2 = as.numeric(str_extract(Prom_2, "\\d+")),
+                                              Prom_3 = as.numeric(str_extract(Prom_3, "\\d+")),
+                                              Prom_4 = as.numeric(str_extract(Prom_4, "\\d+")),
+                                              Prom_5 = as.numeric(str_extract(Prom_5, "\\d+")),
+                                              Prev_1 = as.numeric(str_extract(Prev_1, "\\d+")),
+                                              Prev_2 = as.numeric(str_extract(Prev_2, "\\d+")),
+                                              Prev_3 = as.numeric(str_extract(Prev_3, "\\d+")),
+                                              Prev_4 = as.numeric(str_extract(Prev_4, "\\d+")),
+                                              Prev_5 = as.numeric(str_extract(Prev_5, "\\d+")))
+
+
+raw_survey_data <- raw_survey_data %>%
+  mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
+
+
+raw_survey_data <- raw_survey_data %>%
+  mutate(Other_Citi_Sci = ifelse(Other_Citi_Sci == "Yes", 1, 0))
+
+```
+
+
+New columns were added for
+- Age Group
+- Regulatory Orientation (calculated from subtracting the total of Prevention score from Promotion Score)
+- Regulatory Orientation Categories (Prevention if Negative, neutral if 0, and Promotion if Positive)
+- Columns for the scores of the 4 higher level order motivators from CSMS of Levontin et.al were calculated
+
+```{r Survey New Column Creation}
+
+#creating age groups
+raw_survey_data <- raw_survey_data %>%
+  mutate(Age_Group = case_when(
+    Age >= 18 & Age <= 25 ~ '18-25',
+    Age >= 26 & Age <= 35 ~ '26-35',
+    Age >= 36 & Age <= 48 ~ '36-48',
+    Age >= 49 & Age <= 62 ~ '49-62',
+    Age >= 63 ~ '63 and older',
+    TRUE ~ 'Unknown'  
+  ))
+
+#creating an average individual Reg Focus
+raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation = (Prom_1+Prom_2+Prom_3+Prom_4+Prom_5 - Prev_1 - Prev_2- Prev_3- Prev_4- Prev_5))
+
+
+# Adding categorical version of Reg_Orientation
+raw_survey_data <- raw_survey_data %>%
+  mutate(Reg_Orientation_Cat = case_when(
+    Reg_Orientation < 0 ~ "Prevention",
+    Reg_Orientation == 0 ~ "Neutral",
+    Reg_Orientation > 0 ~ "Promotion",
+    TRUE ~ as.character(NA)  # For NAs
+  ))
+raw_survey_data <- raw_survey_data %>% mutate(Reg_Orientation_Cat = as.factor(Reg_Orientation_Cat))
+
+#Creating 4 higher level orders from CSMS of Levontin et.al
+
+raw_survey_data <- raw_survey_data %>%
+  mutate(Openness_To_Change = round((Self_Direction + Stimulation + Social_Expansion+Hedonism)/4,2)) %>%
+  mutate(Self_Enhancement = round((Achievement + Power + Face)/3,2)) %>%
+  mutate(Continuity = round((Routine + Conformity)/2,2)) %>%
+  mutate(Self_Transcendence = round((Universalism_Social + Universalism_Nature + Benevolence+ Help_Science)/4,2))  
+```
+
+Columns were converted to required format and "Date.submitted" and "Seed" Columns excluded
+```{r Survey Rearanging and changing format}
+raw_survey_data <- raw_survey_data %>% 
+  dplyr::select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+         Age_Group, Gender, Country, Participation_Date, Network, 
+         Other_Citi_Sci, Reg_Orientation,Reg_Orientation_Cat, 
+         Openness_To_Change, Self_Enhancement, Continuity, Self_Transcendence, 
+         Security, Teaching, Self_Direction, Stimulation, Hedonism, 
+         Achievement, Face, Conformity, Benevolence, Universalism_Social, 
+         Universalism_Nature, Routine, Social_Expansion, Power, 
+         Help_Science,Dislike, Env_Change, Prom_1, Prom_2, Prom_3, 
+         Prom_4, Prom_5,  Prev_1, Prev_2, Prev_3, Prev_4, Prev_5) %>% 
+  mutate( Age_Group = as.factor(Age_Group),
+          Gender = as.factor(Gender),
+          Country = as.factor(Country),
+          Participation_Date = as.factor(Participation_Date),
+          Network = as.numeric(Network))
+```
+
+Final Data set for survey Data was created from the raw data set.
+- Entries that have not given Consent, not completed the entire survey, and their username was not registered were filtered out (234 entries excluded)
+- Entries of users that have participated multiple times were limited to their first attempt (8 entries excluded)
+- file saved as CSV as "CleanSurveydData"
+```{r Final Survey Data Created}
+survey_data <- raw_survey_data %>%
+  filter(Last.page  == 5 & Consent == "Yes" & nzchar(User_ID) > 0)
+
+survey_data <- survey_data %>%
+  group_by(User_ID) %>%
+  filter(row_number() == 1) %>%
+  mutate(Complt_Survey = TRUE) %>% 
+  ungroup()
+
+write.csv(survey_data, "CleanSurveydData.csv", row.names = FALSE)
+```
+In total 238 Participants have given their consent to participate in the messaging experiment, 218 of them have completed the survey fully.
+
+
+
+## Messaging Data
+A csv file of all messages sent  was requested from the Mosquito Alert Development and Technological Support, downloaded from the server on Nov 22nd 2023.
+
+- Message label column was split to create distinct columns for message type, language and number
+- Names were changed to match the style chosen for the survey data
+- Column Formats were adjusted for analysis
+
+```{r Messaging Data Loading And Cleaning}
+raw_message_data <- read.csv(file="all_messages.csv", header = TRUE)
+#separate notification column to type language and msg_nmbr
+raw_message_data <- raw_message_data %>% separate(notification_label, c('type','language','msg_nmbr'))
+#change the message date to simple date
+raw_message_data <- raw_message_data %>% 
+  rename(User_ID = user_uuid, Msg_Date = date_sent, Msg_Lang = language) %>% 
+  mutate(Msg_Nmbr = as.integer(msg_nmbr),
+         Msg_Date = as.POSIXct(Msg_Date, format = "%Y-%m-%d %H:%M:%S"),
+         Year = format(Msg_Date, "%Y")) %>%
+  group_by(User_ID) %>%
+  mutate(Repeat_User = n_distinct(Year) > 1)%>%
+  mutate(type = tools::toTitleCase(type)) %>% 
+  ungroup() 
+
+```
+
+message Data was created:
+- Messages sent in earlier years were filtered
+- Date of First and Last messages determined and used to create messaging treatment duration for each user
+- The number of messages sent to and seen by each users added
+- A new column was created to show different messaging groups based on date of firs message recived and the period in which users recived messages.
+
+```{r Messaging Data final}
+
+message_data <- raw_message_data %>%
+  filter(year(Msg_Date) == 2023) %>% 
+  group_by(User_ID) %>%
+  summarize(
+    Msg_Type = first(type),
+    Msg_Lang = first(Msg_Lang),
+    First_Msg_Date = as.POSIXct(format(min(Msg_Date), "%Y-%m-%d")),
+    Last_Msg_Date = as.POSIXct(format(max(Msg_Date), "%Y-%m-%d")),
+    Nmbr_Msgs_Sent = n(),
+    Nmbr_Msgs_Seen = sum(read_notification == "t"),
+    Msg_Duration_Days = as.integer(Last_Msg_Date - First_Msg_Date, units = "days")
+  ) %>%
+  ungroup() %>%
+  mutate(Msg_Type = as.factor(Msg_Type))
+
+
+
+message_data <- message_data %>%
+  mutate(
+    Message_Group = case_when(
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) <= 14 ~ "A-June1",
+      month(First_Msg_Date) == 6 & day(First_Msg_Date) > 14 ~ "B-June2",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) <= 14 ~ "C-July1",
+      month(First_Msg_Date) == 7 & day(First_Msg_Date) > 14 ~ "D-July2",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) <= 14 ~ "E-Aug1",
+      month(First_Msg_Date) == 8 & day(First_Msg_Date) > 14 ~ "F-Aug2",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) <= 14 ~ "G-Sept1",
+      month(First_Msg_Date) == 9 & day(First_Msg_Date) > 14 ~ "H-Sept2",
+      month(First_Msg_Date) == 10 & day(First_Msg_Date) <= 14 ~ "I-Oct1",
+      month(First_Msg_Date) == 10 & day(First_Msg_Date) > 14 ~ "J-Oct2",
+      month(First_Msg_Date) == 11 & day(First_Msg_Date) <= 14 ~ "K-Nov1",
+      month(First_Msg_Date) == 10 & day(First_Msg_Date) > 14 ~ "L-Nov2",
+      TRUE ~ NA_character_
+    )
+  ) %>% 
+  mutate(Message_Group = as.factor(Message_Group))
+
+
+write.csv(message_data, "CleanMessageData.csv", row.names = FALSE)
+```
+
+The final count of users in messaging data was 238, matching the number from survey data
+79 participants were in the groups that got promotion and neutral messages, and 80 received messages tailored to for prevention
+- file saved as CSV as "CleanMessageData"
+
+
+## Report Data
+A csv file of all reports filled since the initiation of the Project in 2014 was requested from the Mosquito Alert Development and Technological Support, downloaded from the server on Nov 22nd 2023.
+
+```{r Report Data Loading And Cleaning}
+raw_reports_data <- read.csv(file="full_reports_table.csv", header = TRUE) %>% 
+  mutate(creation_time= as.POSIXct(creation_time, format = "%Y-%m-%d"))
+
+```
+
+Report data set created from raw
+- Columns renamed to match style of survey and messaging data sets
+- Reports prior to the update of application on the 2nd of October 2020 filtered out in order to avoid citizen scientists that maintained participation with an automatically altered user ID.
+-Column format adjusted for analysis
+
+```{r Report Data final}
+reports_data <- raw_reports_data %>%
+  dplyr::select(user_id, location_choice, creation_time, type) %>% 
+  rename(User_ID = user_id,
+         Rprt_Loc_Choice = location_choice,
+         Rprt_Date = creation_time,
+         Rprt_Type = type) %>% 
+  filter(User_ID != "" & Rprt_Date >= as.POSIXct("2020-10-02") & Rprt_Date <= as.POSIXct("2023-12-31"))
+
+reports_data <- reports_data %>% mutate(Rprt_Type = as.factor(Rprt_Type),
+                                        Rprt_Loc_Choice = as.factor(Rprt_Loc_Choice))
+
+write.csv(reports_data, "CleanReportsData.csv", row.names = FALSE)
+```
+
+The final data set had a row count of  147,123 representing all the reports filled since 2020-10-02
+- file saved as CSV as "CleanReportsData"
+
+## User Data
+
+A csv file of all user ID's who have registered since the initiation of the Project in 2014 was requested from the Mosquito Alert Development and Technological Support, downloaded from the server on Nov 22nd 2023.
+
+- The column names were adjusted to match the set style and their formats corrected for analysis
+- The report counts 
+```{r Report Data}
+raw_user_data <- read.csv(file="reports_by_uuid.csv", header = TRUE)
+
+raw_user_data <- raw_user_data %>% 
+  rename( User_ID = user_UUID,
+          Registered_Participation_Date = registration_time,
+          Registered_Total_Reports = n) %>% 
+  mutate(Registered_Participation_Date = as.POSIXct(Registered_Participation_Date, format = "%Y-%m-%d %H:%M:%S"),
+         Registered_Total_Reports = as.integer(Registered_Total_Reports)) %>%
+  replace_na(list(Registered_Total_Reports = 0)) 
+
+```
+
+
+Final data set for users was created by filtering out all registrations before the update
+```{r Report Data final}
+user_data <- raw_user_data %>%
+  filter(Registered_Participation_Date >= as.POSIXct("2020-10-02"))
+
+write.csv(user_data, "CleanUserData.csv", row.names = FALSE)
+```
+
+- file saved as CSV as "CleanUserData"
+
+
+## Joining Data Sets
+
+Survey, Message, and Report Data sets were joined by User ID
+
+```{r Main Data Set}
+
+data_tall <- full_join(survey_data, message_data, by = "User_ID")
+
+data_tall <- full_join(data_tall, reports_data, by = "User_ID")
+```
+
+
+New column were created for:
+- Count of Reports in total, by type, years, mosquito seasons, and before/during/after messaging duration for each user
+- Irrelevant or redundant columns from each of the data sets were filtered out
+```{r Main Data Set Combination}
+data_tall <- data_tall %>%
+  group_by(User_ID) %>%
+  mutate(Got_Msgs = !is.na(First_Msg_Date),
+         Total_Rprts_Filled = n(),
+         Season_Rprts_Filled_2023 = sum(Rprt_Date >= "2023-05-01" & Rprt_Date <= "2023-10-30"),
+         Season_Rprts_Filled_2022 = sum(Rprt_Date >= "2022-05-01" & Rprt_Date <= "2022-10-30"),
+         Season_Rprts_Filled_2021 = sum(Rprt_Date >= "2021-05-01" & Rprt_Date <= "2021-10-30"),
+         Rprts_Filled_2023 = sum(Rprt_Date >= "2023-01-01"),
+         Rprts_Filled_2022 = sum(Rprt_Date >= "2022-01-01" & Rprt_Date <= "2022-12-31"),
+         Rprts_Filled_2021 = sum(Rprt_Date >= "2021-01-01" & Rprt_Date <= "2021-12-31"),
+         Total_Rprts_Segment = cut(Total_Rprts_Filled, breaks = c(-1, 0, 1, 10, 50, Inf),
+                                   labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),right = TRUE),
+         Total_Bite_Rprts_Filled = sum(Rprt_Type == "bite"),
+         Total_Adult_Rprts_Filled = sum(Rprt_Type == "adult"),
+         Total_Site_Rprts_Filled = sum(Rprt_Type == "site"),
+         Rprts_During_Msging = sum(Rprt_Date >= First_Msg_Date & Rprt_Date <= Last_Msg_Date, na.rm = TRUE),
+         Rprts_Before_Msging = sum(Rprt_Date >= (First_Msg_Date - days(Msg_Duration_Days)) & Rprt_Date < First_Msg_Date, na.rm = TRUE),
+         Rprts_After_Msging = sum(Rprt_Date > Last_Msg_Date & Rprt_Date <= (Last_Msg_Date + days(Msg_Duration_Days)), na.rm = TRUE)) %>% 
+  ungroup()
+
+
+data_tall <- data_tall %>% 
+  dplyr::select(User_ID, Rprt_Date, Rprt_Type, Got_Msgs, Complt_Survey, Total_Rprts_Filled, Age, Age_Group, 
+         Gender, Country, Participation_Date, Msg_Type, Reg_Orientation,Reg_Orientation_Cat, Network, Other_Citi_Sci,  Openness_To_Change,
+         Self_Enhancement, Continuity, Self_Transcendence, Security, Teaching, Message_Group, First_Msg_Date, Last_Msg_Date, Nmbr_Msgs_Sent, 
+         Nmbr_Msgs_Seen, Rprts_Filled_2021,Rprts_Filled_2022, Rprts_Filled_2023, Total_Rprts_Segment,Season_Rprts_Filled_2023, 
+         Season_Rprts_Filled_2022,Season_Rprts_Filled_2021, Total_Bite_Rprts_Filled, Total_Adult_Rprts_Filled, Total_Site_Rprts_Filled,
+         Rprts_During_Msging, Rprts_Before_Msging, Rprts_After_Msging)
+```
+
+Main data set was created:
+- The rows were rearranged and the first entry for each user selected
+- User data set was joined to include users that have not filled any reports
+- NAs in different columns addressed
+- And rows gathered to create a sepearte row for each user
+
+```{r Main Data Set }
+
+data <- data_tall %>%
+  group_by(User_ID) %>%
+  arrange(User_ID, Rprt_Date) %>% 
+  dplyr::select(-Rprt_Date, -Rprt_Type) %>% 
+  slice(1L) %>% 
+  ungroup() 
+
+data <- full_join(data, user_data, by = "User_ID")
+
+
+data <- data %>%
+  mutate(across(c(Got_Msgs, Complt_Survey), ~replace_na(.x, FALSE))) %>%
+  mutate(across(c(Total_Rprts_Filled, Nmbr_Msgs_Sent, Nmbr_Msgs_Seen,Rprts_Filled_2021, Rprts_Filled_2022, Rprts_Filled_2023, 
+                  Season_Rprts_Filled_2023, Season_Rprts_Filled_2022, Season_Rprts_Filled_2021,
+                  Total_Bite_Rprts_Filled, Total_Adult_Rprts_Filled, Total_Site_Rprts_Filled,
+                  Rprts_During_Msging, Rprts_Before_Msging, Rprts_After_Msging), ~replace_na(.x, 0))) %>%
+  mutate(Msg_Type = forcats::fct_expand(Msg_Type, "None")) %>% 
+  mutate(Msg_Type = tidyr::replace_na(Msg_Type, "None"))  
+ 
+data <- data %>% 
+  dplyr::select(User_ID, Got_Msgs, Complt_Survey, Total_Rprts_Filled, Registered_Total_Reports, 
+         Age , Age_Group, Gender, Country, Participation_Date, Registered_Participation_Date, everything())  
+
+```
+
+
+Data sets of only those that completed the survey, and those that were part of the experiment created to speed up analysis.
+
+```{r Main Data Set }
+survey_completed <- data %>% filter(Complt_Survey == TRUE)
+
+received_msgs <- data %>% filter(Got_Msgs == TRUE)
+
+write.csv(data, "loaddata.csv", row.names = FALSE)
+write.csv(survey_completed, "sureycompdata.csv", row.names = FALSE)
+write.csv(received_msgs, "recmsgdata.csv", row.names = FALSE)
+```
+
+- files saved as CSV as "loaddata", "sureycompdata" and "recmsgdata"
+
+
+## Creation of Data used for Time Series Analysis
+
+A long format of the data was created which included rows for each time a message was sent and each time a message was sent or a report filled for each specific user
+- A data set was created by filtering the reports data set to include only reports done by users who were part of the messaging experiment, and only during the mosquito season of 2023.
+- A data set was created by filtering the raw messaging data to include only messages sent in the mosquito season of  2023 (unnecessary but to be consistent with reporting data)
+- A data set was created to consist of rows for each date in the mosquito season, ie between 01/05 and 31/10
+- Both message and report data sets created are extended to include rows for all dates of the season, and their NAs adjusted 
+```{Time Series Data}
+#Time Series Final
+
+rep_msg_2023 <- reports_data %>% 
+  filter(User_ID %in% received_msgs$User_ID) %>% 
+  filter(year(as.Date(Rprt_Date)) == 2023) %>%
+  mutate(Rprt_Type = as.character(Rprt_Type)) %>% 
+  rename(Date = Rprt_Date) %>% 
+  filter(Date >= "2023-05-01"& Date <= "2023-10-31")
+
+msg_rep_2023<- raw_message_data %>%
+  filter(year(Msg_Date) == 2023) %>% 
+  dplyr::select(-Msg_Lang,-msg_nmbr,-Repeat_User,-id) %>% 
+  mutate(read_notification= as.integer(read_notification == "t"), Msg_Date = as.Date(Msg_Date)) %>% 
+  dplyr::select(User_ID, Msg_Date, type, read_notification, Msg_Nmbr) %>% 
+  rename(Msg_Type = type, Msg_Seen = read_notification, Date = Msg_Date) %>% 
+filter(Date >= "2023-05-01"& Date <= "2023-10-31")
+
+
+
+dates_2023  <- seq.Date(as.Date("2023-05-01"), as.Date("2023-10-30"), by = "day")
+
+expanded_reports <- expand.grid(User_ID = unique(rep_msg_2023$User_ID), Date = dates_2023)
+expanded_messages <- expand.grid(User_ID = unique(msg_rep_2023$User_ID), Date = dates_2023)
+
+full_reports <- merge(expanded_reports, rep_msg_2023, by = c("User_ID", "Date"), all = TRUE)
+full_messages <- merge(expanded_messages, msg_rep_2023, by = c("User_ID", "Date"), all = TRUE)
+
+full_reports$Rprt_Type[is.na(full_reports$Rprt_Type)] <- "None"
+full_messages$Msg_Seen[is.na(full_messages$Msg_Seen)] <- 0
+full_messages$Msg_Type[is.na(full_messages$Msg_Type)] <- "None"
+full_messages$Msg_Nmbr[is.na(full_messages$Msg_Nmbr)] <- 0
+
+report_msg_long <- left_join(full_reports, full_messages, by = c("User_ID", "Date"))
+
+report_msg_long <- report_msg_long %>%
+  mutate(Rprt_Filled = ifelse(Rprt_Type != "None", 1, 0), Msg_Received = ifelse(Msg_Type != "None", 1, 0))
+
+report_msg_long$Rprt_Type <- as.factor(report_msg_long$Rprt_Type)
+report_msg_long$Msg_Type <- as.factor(report_msg_long$Msg_Type)
+
+
+write.csv(report_msg_long, "reportmsglong.csv", row.names = FALSE)
+
+rm(full_messages, full_reports, expanded_messages,expanded_reports, dates_2023, msg_rep_2023, rep_msg_2023)
+```
+
+The data set was summarized to include a row for each date of the season for each user.
+- The number of reports for each combination of User_ID, Date, and Rprt_Type was counted
+- Separate column for each report type was created and totals calculated 
+- Binary variable for reporting was created
+- The dates in which messages were sent, seen and their type was extracted from the long data set and added
+- Columns on user demographics were added from the survey data set
+- Lastly a new binary column added to show if there is an agreement between the message sent a=nd the dispositional regulatory orientation of the participant.
+
+```{Time Series final}
+report_msg_wide <- report_msg_long %>%
+  mutate(report_indicator = as.integer(1)) %>%
+  group_by(User_ID, Date, Rprt_Type) %>%
+  summarize(report_indicator = sum(report_indicator, na.rm = TRUE), .groups = 'drop') %>%
+  pivot_wider(
+    names_from = Rprt_Type, 
+    values_from = report_indicator, 
+    values_fill = list(report_indicator = 0)  
+  ) %>% 
+  mutate(
+    total_reports = adult + bite + site,
+    Report = as.numeric(!None)) %>% 
+  dplyr::select(-None)
+
+
+msg_subset <- report_msg_long %>%
+  group_by(User_ID, Date) %>%
+  slice(1) %>%
+  dplyr::select(User_ID, Date, Msg_Received, Msg_Type, Msg_Seen) %>%
+  ungroup()
+
+report_msg_wide <- report_msg_wide %>%
+  left_join(msg_subset, by = c("User_ID", "Date"))
+
+report_msg_wide <- report_msg_wide %>% 
+  left_join(survey_data %>% dplyr::select(User_ID, Gender, Age_Group, Reg_Orientation_Cat), by = "User_ID") %>% 
+  filter(!is.na(Msg_Type))
+
+rm(msg_subset)
+
+report_msg_wide <- report_msg_wide %>%
+  mutate(Orientation_Msg_Agreement = case_when(
+    Msg_Type == "Neutral" & Reg_Orientation_Cat == "Neutral" ~ 1,
+    Msg_Type == "Promotion" & Reg_Orientation_Cat == "Promotion" ~ 1,
+    Msg_Type == "Prevention" & Reg_Orientation_Cat == "Prevention" ~ 1,
+    TRUE ~ 0
+  ))
+
+str(report_msg_wide)
+
+write.csv(report_msg_wide, "reportmsgwide.csv", row.names = FALSE)
+```
+- file saved as CSV as "reportmsgwide"
+
