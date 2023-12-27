@@ -3,7 +3,7 @@
 raw_user_data <- read.csv(file="reports_by_uuid.csv", header = TRUE)
 
 
-#since the beginning of the project, there have been 353,712 registration/downloads
+#since the beginning of the project, there have been 354,712 registration/downloads
 raw_user_data <- raw_user_data %>% 
   rename( User_ID = user_UUID,
           Registered_Participation_Date = registration_time,

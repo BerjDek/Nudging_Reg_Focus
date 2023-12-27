@@ -17,7 +17,7 @@ data_tall <- full_join(data_tall, reports_data, by = "User_ID")
 
 
 
-#alternative
+#creating necessary columns
 data_tall <- data_tall %>%
   group_by(User_ID) %>%
   mutate(Got_Msgs = !is.na(First_Msg_Date),
@@ -42,7 +42,7 @@ data_tall <- data_tall %>%
 
 
 data_tall <- data_tall %>% 
-  select(User_ID, Rprt_Date, Rprt_Type, Got_Msgs, Complt_Survey, Total_Rprts_Filled, Age, Age_Group, 
+  dplyr::select(User_ID, Rprt_Date, Rprt_Type, Got_Msgs, Complt_Survey, Total_Rprts_Filled, Age, Age_Group, 
          Gender, Country, Participation_Date, Msg_Type, Reg_Orientation,Reg_Orientation_Cat, Network, Other_Citi_Sci,  Openness_To_Change,
          Self_Enhancement, Continuity, Self_Transcendence, Security, Teaching, Message_Group, First_Msg_Date, Last_Msg_Date, Nmbr_Msgs_Sent, 
          Nmbr_Msgs_Seen, Rprts_Filled_2021,Rprts_Filled_2022, Rprts_Filled_2023, Total_Rprts_Segment,Season_Rprts_Filled_2023, 
@@ -59,7 +59,7 @@ str(data_tall)
 data <- data_tall %>%
   group_by(User_ID) %>%
   arrange(User_ID, Rprt_Date) %>% # Arrange by date to ensure first occurrence is taken
-  select(-Rprt_Date, -Rprt_Type) %>% # Remove unwanted columns
+  dplyr::select(-Rprt_Date, -Rprt_Type) %>% # Remove unwanted columns
   slice(1L) %>% # Take the first occurrence for each user
   ungroup() 
 
@@ -82,7 +82,7 @@ data <- data %>%
  
   
 data <- data %>% 
-  select(User_ID, Got_Msgs, Complt_Survey, Total_Rprts_Filled, Registered_Total_Reports, 
+  dplyr::select(User_ID, Got_Msgs, Complt_Survey, Total_Rprts_Filled, Registered_Total_Reports, 
          Age , Age_Group, Gender, Country, Participation_Date, Registered_Participation_Date, everything())  
   
 str(data)       
@@ -96,11 +96,8 @@ received_msgs <- data %>% filter(Got_Msgs == TRUE)
 write.csv(received_msgs, "recmsgdata.csv", row.names = FALSE)
 
 
-
+str(survey_completed)
 
 #IN THE FINAL ITIRATION THESE NEW VARIABLES WERE NOT CREATED
 
-#make data tall appropriate for analysis
-data_tall <- full_join(data_tall, user_data, by = "User_ID")
 
-data_tall <- full_join(data_tall, long_message_data, by = "User_ID")

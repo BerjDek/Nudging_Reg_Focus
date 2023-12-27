@@ -1,6 +1,3 @@
-library(tidyverse)
-
-
 
 #load message Data
 raw_message_data <- read.csv(file="all_messages.csv", header = TRUE)
@@ -13,11 +10,8 @@ raw_message_data <- raw_message_data %>%
          Msg_Date = as.POSIXct(Msg_Date, format = "%Y-%m-%d %H:%M:%S"),
          Year = format(Msg_Date, "%Y")) %>%
   group_by(User_ID) %>%
-  mutate(Repeat_User = n_distinct(Year) > 1) %>%
-  mutate(type = case_when(
-                          "Promotion" = "promotion",
-                          "Prevention" = "prevention",
-                          "Neutral" = "neutral")) %>% 
+  mutate(Repeat_User = n_distinct(Year) > 1)%>%
+  mutate(type = tools::toTitleCase(type)) %>% 
   ungroup() 
 
 #first the data for messages were loaded into a data set called message_data_raw, the notification label was split in order to have 
@@ -40,10 +34,7 @@ message_data <- raw_message_data %>%
   group_by(User_ID) %>%
   summarize(
     Msg_Type = first(type),
-    Repeat_User = first(Repeat_User),
     Msg_Lang = first(Msg_Lang),
-    First_Msg_Date = as.POSIXct(format(min(Msg_Date), "%Y-%m-%d")),
-    Last_Msg_Date = as.POSIXct(format(max(Msg_Date), "%Y-%m-%d")),
     First_Msg_Date = as.POSIXct(format(min(Msg_Date), "%Y-%m-%d")),
     Last_Msg_Date = as.POSIXct(format(max(Msg_Date), "%Y-%m-%d")),
     Nmbr_Msgs_Sent = n(),
@@ -77,29 +68,17 @@ message_data <- message_data %>%
   ) %>% 
   mutate(Message_Group = as.factor(Message_Group))
 
-write.csv(message_data, "CleanMessageData.csv", row.names = FALSE)
 
-#The final count of users are 237 users that received messages, with 79 participants in each group.
+
+#The final count of users are 238 users that received messages, with 79 participants in each group and 80 for prevention orientation.
 #The number corresponds with the Unique users that have initiated the survey and gave their consent
 
 
-#just to check, downsizing the users to the ones that completed the whole survey, so to make sure they didn´t just click consent and were later uninterested
 
 
 
 
-
-filtered_message_data <- message_data %>%
-  filter(User_ID %in% survey_data$User_ID)
+write.csv(message_data, "CleanMessageData.csv", row.names = FALSE)
 
 
-
-
-long_message_data <- raw_message_data %>%
-  filter(year(Msg_Date) == 2023) %>% 
-  select(User_ID,Msg_Date,type,read_notification,Msg_Nmbr) %>% 
-  rename(Msg_Type = type,
-         Msg_Seen = read_notification) %>% 
-  mutate(Msg_Type = as.factor(Msg_Type),
-         Msg_Seen = ifelse(Msg_Seen == "t", 1, 0))
 
