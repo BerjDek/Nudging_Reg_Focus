@@ -1,0 +1,528 @@
+---
+title: "Descriptive Analysis"
+author: "Berj Dekramanjian"
+date: "2023-12-21"
+output: pdf_document
+---
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+
+```
+
+# Loaded Packages
+- tidyverse
+- car
+- scales
+- pwr
+- lme4
+- MASS
+- multcomp
+- dplyr
+```{r Package, include=FALSE, warning=FALSE}
+library(tidyverse)
+library(car)
+library(scales)
+library(broom)
+library(pwr)
+library(lme4)
+library(MASS)
+library(multcomp)
+library(dplyr)
+```
+
+# Descriptive Analysis
+
+## Ability of Survey to be Representative of Citizen Scientists
+```{r Data Load, echo = FALSE}
+data <- read.csv("loaddata.csv", header = TRUE)
+survey_data <- read.csv("CleanSurveydData.csv", header = TRUE)
+message_data <- read.csv("CleanMessageData.csv", header = TRUE)
+reports_data <- read.csv("CleanReportsData.csv", header = TRUE)
+user_data <- read.csv("CleanUserData.csv", header = TRUE)
+survey_completed <- read.csv("sureycompdata.csv", header = TRUE)
+received_msgs <- read.csv("recmsgdata.csv", header = TRUE)
+report_msg_wide <- read.csv("reportmsgwide.csv", header = TRUE)
+report_msg_long <- read.csv("reportmsglong.csv", header = TRUE)
+```
+
+Before starting to the analysis first we check how representative the survey is of the general 
+population size is the total number of citizen scientists who ahve registered 
+
+```{r Representation, echo = TRUE}
+
+population_size <- nrow(data)  # Total population that downloaded the app
+sample_size <- nrow(survey_completed)        # Sample size who completed the survey
+confidence_level_constant <- 1.96  # 95% confidence level
+
+# Assuming maximum variability since we don't know the population characteristics (p=0.5 for maximum variability)
+p <- 0.5
+
+# Calculate the margin of error using the formula with finite population correction
+margin_of_error <- (confidence_level_constant * sqrt((p * (1 - p)) / sample_size)) / 
+  (1 + ((confidence_level_constant^2 * p * (1 - p)) / 
+          (sample_size * population_size)))
+
+# Convert to percentage
+margin_of_error_percentage <- margin_of_error * 100
+
+# Calculate response rate and completion rate
+invitations_seen <- 450
+attempts_made <- 238
+response_rate <- (attempts_made / invitations_seen) * 100
+completion_rate <- (sample_size / attempts_made) * 100
+
+list(margin_of_error_percentage = margin_of_error_percentage, 
+     response_rate = response_rate, 
+     completion_rate = completion_rate)
+rm(population_size,sample_size, confidence_level_constant, p,margin_of_error, margin_of_error_percentage, invitations_seen, attempts_made, response_rate, completion_rate)
+```
+
+While the response rate of **52.88%** among those who viewed the invitation is robust.
+For reasons of privacy, the project cannot track users that are still active or even those who have kept the app on their phone to receive the invitations sent. 
+This skews the margin of error, however with the extremely unlikely possibility of 0 attrition of registered users, the margin of error is measured at at **6.65%**,somewhat higher than the typically desired **5%**. 
+Due to the format of invitation to take part in the survey it should be kept in mind that the findings will most likely be representative of the subset of users who are engaged and able to notice and willing to respond to in-app invites. 
+The results, therefore, should be generalized to the broader population of all those who downloaded the app only with substantial caveats.
+
+
+## Demographic variables
+
+```{r demographic, echo = FALSE,}
+# Descriptive statistics for demographic variables
+
+summary(survey_completed %>% dplyr::select(Age, Age_Group, Gender, Country, Network, Other_Citi_Sci, Participation_Date))
+
+```
+Mean age of participants is **48.6**, and in line with findings from previous studies.
+There is higher rate of male participation with **122** to **89**,where earlier findings had higher female or mostly equal participation rates.
+Majority of reports were as expected from **3** countries: Spain, Italy, and Netherlands with **103,77**,and **22** participants respectively.
+The vast majority have no acquaintances also participating, and are not part of other citizen science projects
+The majority of participants are also as expected recent recruits from 2023 (**72**), and the participation drops as the the years go back (**54,40,21,10.....**)
+
+### Age Distribution
+```{r age, echo = FALSE, warning=FALSE}
+ggplot(survey_completed, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "#16697a", color = "#8491a3") +
+  geom_vline(aes(xintercept = mean(Age, na.rm = TRUE)), color = "#d34e24", linetype = "dashed", size = 1) +
+  labs(
+    title = "Distribution of Ages",
+    x = "Age (years)",
+    y = "Count"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    plot.title = element_text(size = 16, face = "bold"),
+    legend.position = "none"
+  ) +
+  annotate(
+    "text",
+    x = mean(survey_completed$Age, na.rm = TRUE),
+    y = max(table(survey_completed$Age)),
+    label = sprintf("Mean Age: %.1f", mean(survey_completed$Age, na.rm = TRUE)),
+    vjust = -20,
+    hjust = 1.1,
+    size = 4,
+    color = "#2d1e2f"
+  ) 
+```
+
+### Gender Distribution
+
+```{r gender, echo = FALSE, warning=FALSE}
+ggplot(survey_completed, aes(x = reorder(Gender, -table(survey_completed$Gender)[Gender]))) +
+  geom_bar(aes(fill = Gender), color = "#8491a3") +
+  geom_text(stat='count', aes(label=..count..), vjust=-0.5, position=position_stack(vjust=0.5)) +
+  labs(title = "Distribution of Gender", x = "Gender", y = "Citizen Scientists") +
+  scale_fill_manual(values = c("#16697a","#e0c40d", "#d34e24",  "#38726c", "#c1dff0", "#8491a3", "#16302b")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+```
+
+## Regulatory Focus & Motivators
+
+```{r Reg and Mot, echo = FALSE,}
+summary(survey_completed %>% dplyr::select(Reg_Orientation, Reg_Orientation_Cat, Openness_To_Change, Self_Enhancement, 
+                                    Continuity, Self_Transcendence, Security, Teaching))
+```
+
+The average Regulatory orientation of survey takers is **-1.381**, meaning more prevention oriented as hypothesized, counter to the notion that a general population should be split equally and in western countries be more inclined to be promotion oriented. Checking the participants by categorization shows that by far the majority of users are of prevention-orientation with **121** to **70**.
+
+Regarding the motivators, the two highest means were for Self Transcendence **4.28** and Security **4.26** with security having a higher median **5** followed by Openness to Change **3.23**, Teaching **2.26**, and very low scores for Continuity **1.8** and Self Enhancement **1.49**
+  
+###  Disrtibution 
+  
+```{r Reg Focus Disrtibution, echo = FALSE, warning=FALSE}
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat)) %>%
+  ggplot(aes(x = fct_infreq(Reg_Orientation_Cat))) +
+  geom_bar(aes(fill = Reg_Orientation_Cat), color = "#8491a3") +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, position = position_stack(vjust = 0.5)) +
+  labs(title = "Distribution of Regulatory Orientation ",x = "Regulatory Orientation Category", y = "Citizen Scientists") +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24",  "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+```
+
+### Distribution of Regulatory Orientation Catagories By Gender and Age Group
+
+```{r Reg Focus GenderDisrtibution, echo = FALSE, warning=FALSE}
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat), !is.na(Gender),Gender %in% c("Male", "Female")) %>%
+  group_by(Gender) %>%
+  mutate(total_gender = n()) %>%
+  group_by(Gender, Reg_Orientation_Cat, total_gender) %>%
+  summarise(count = n(), .groups = 'drop_last') %>%
+  ungroup() %>%
+  mutate(percentage = (count / total_gender) * 100) %>%
+  ggplot(aes(x = fct_infreq(Gender))) +
+  geom_bar(aes(y = percentage, fill = Reg_Orientation_Cat), stat = "identity", position = "dodge", color = "#8491a3") +
+  geom_text(aes(y = percentage, label = percent(percentage/100, accuracy = 1), group = Reg_Orientation_Cat),
+            vjust = -0.5, position = position_dodge(width = 0.9), size = 2) +
+  labs(title = "Distribution of Regulatory Orientation by Gender",
+       x = "Gender", 
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24",  "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(fill = NULL)
+
+survey_completed %>%
+  filter(!is.na(Reg_Orientation_Cat), !is.na(Age_Group)) %>%
+  group_by(Age_Group) %>%
+  mutate(total_age_group = n()) %>%
+  group_by(Age_Group, Reg_Orientation_Cat, total_age_group) %>%
+  summarise(count = n(), .groups = 'drop_last') %>%
+  ungroup() %>%
+  mutate(percentage = (count / total_age_group) * 100) %>%
+  ggplot(aes(x = fct_infreq(Age_Group))) +
+  geom_bar(aes(y = percentage, fill = Reg_Orientation_Cat), stat = "identity", position = "dodge", color = "#8491a3") +
+  geom_text(aes(y = percentage, label = percent(percentage/100, accuracy = 1), group = Reg_Orientation_Cat),
+            vjust = -0.5, position = position_dodge(width = 0.9), size = 2) +
+  labs(title = "Distribution of Regulatory Orientation by Age Group ",
+       x = "Age Group", 
+       y = "Percentage") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24",  "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(fill = NULL)
+```
+The distribution seems mostly equal between genders and age groups, where prevention oriented individuals seem to be more in number regardless
+
+
+  
+  
+
+
+## Motivation Disrtibution 
+
+```{r Motivation Disrtibution, echo = FALSE, warning=FALSE}
+survey_completed %>%
+  summarise(
+    Openness_To_Change = mean(Openness_To_Change, na.rm = TRUE),
+    Self_Enhancement = mean(Self_Enhancement, na.rm = TRUE),
+    Continuity = mean(Continuity, na.rm = TRUE),
+    Self_Transcendence = mean(Self_Transcendence, na.rm = TRUE),
+    Security = mean(Security, na.rm = TRUE),
+    Teaching = mean(Teaching, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = everything(), 
+               names_to = "Motivator", 
+               values_to = "Average") %>%
+  ggplot(aes(x = gsub("_", " ", Motivator), y = Average, fill = Motivator)) +
+  geom_bar(stat = "identity", position = "dodge", color = "#8491a3") +
+  geom_text(aes(label = sprintf("%.2f", Average)), vjust = -0.5, size = 4, position = position_dodge(width = 0.7)) +
+  labs(title = "Distribution of Average Motivator Ratings",
+       y = "Citizen Scientist Rating over 5",
+       x = "Motivator") +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24",  "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  ylim(0, 5) +
+  theme(axis.title.x = element_blank(),
+        legend.position = "none") 
+
+survey_completed %>%
+  dplyr::select(Openness_To_Change:Teaching) %>%
+  pivot_longer(cols = everything(), names_to = "Motivator", values_to = "Score") %>%
+  ggplot(aes(x = gsub("_", " ", Motivator), y = Score, fill = Motivator)) +
+  geom_boxplot() +
+  labs(title = "Distribution Through Candle Stick Chart",
+       x = "Motivator", y = "Score") +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24",  "#38726c", "#c1dff0", "#8491a3", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.position = "none")
+```
+
+## Messages Distribution
+
+For the summer message experiment out of **270,892** registered citizen scientists **238** got messages, of which **218** have completed the survey.
+The final number is the one that is going to be used when checking message distribution in comparison with demographic data and Reg Focus
+
+```{r Messages, echo = FALSE,}
+
+summary(data$Got_Msgs)
+
+
+summary(received_msgs %>% dplyr::select(Msg_Type, Message_Group,Nmbr_Msgs_Sent, Nmbr_Msgs_Seen))
+
+```
+
+
+From the summery, we can see that messages were distributed equally between the three sent types, there is discrepancy of when the users started their messaging treatment.
+**As the current data has is still incomplete as the treatment continues** the minimum number of messages received is 4 (impacted a late signing participant) and the maximum is 13 since some users have received a repeated message.
+The number of messages seen (the user pressed on the message and entered the app after receiving it) varies with some not checking any and other all the messages, with the mean being **5** messages 
+
+
+### Considering Messaging Groups
+
+The citizen scientists participated in the experiment by clicking on a an in-app invite link sent every 10 days to those who have not yet participated. Since initiation their involvmant was voluntary it fluctuated through the season
+```{r Message Groups Distribution, echo = FALSE}
+received_msgs %>%
+  ggplot(aes(x = Message_Group)) +
+  geom_bar(aes(fill = Message_Group), color = "#8491a3") +
+  scale_fill_manual(values = c("#c1dff0", "#16697a",  "#38726c", "#c1dff0", "#16697a",  "#38726c","#c1dff0", "#16697a",  "#38726c")) +
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -0.5, position = position_stack(vjust = 0.5)) +
+  labs(title = "Distribution of Messaging Inititation", x = "Message Group", y = "Citizen Scientists") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+```
+We see that the we´ve had a strong initial start, a drop at the beginning of July, and then another rise after fixing the push notification of the invites.
+
+
+
+## Reports
+
+### Report Distribution
+Since the update of the **270,892** registered citizen scientists **45670** of them have filled  at least **1** report and were responsible for a total of **147123** reports, of which **218** have completed the survey.
+
+
+```{r Reports, echo = FALSE}
+sum(data$Total_Rprts_Filled)
+count(data %>% filter(Total_Rprts_Filled >= 1))
+
+summary(data %>% dplyr::select(Total_Rprts_Filled, Rprts_Filled_2022, Rprts_Filled_2023, Season_Rprts_Filled_2023))
+```
+Checking the summary of the reports filled we see that the fact that the majority of registered citizen scientists do not fill a single report, heavily impacts of reducing the number of reports, where according the to the mean, it should be double if every registrar completes only one report. A further segmented look at user reporting behavior might be useful to assess outlines
+
+
+### Segmented distribution
+
+```{r Segmented Distribution, echo = FALSE}
+
+
+
+data %>%
+  mutate(Total_Rprts_Segment = cut(Total_Rprts_Filled,
+                                   breaks = c(-1, 0, 1, 10, 50, Inf),
+                                   labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),
+                                   right = TRUE)) %>%
+  ggplot(aes(x = Total_Rprts_Segment, fill = Total_Rprts_Segment)) +
+  geom_bar(color = "#8491a3") +
+  geom_text(stat = 'count', aes(label = scales::percent(..count../sum(..count..))), vjust = -0.5) +
+  labs(y = "Number of Users", x = "Total Reports Filled") +
+  scale_fill_manual(values = c( "#d34e24", "#38726c", "#c1dff0", "#8491a3","#e0c40d", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "none")
+
+
+data %>%
+  mutate(Seasonal_Total_Rprts_Segment = cut(Season_Rprts_Filled_2023,
+                                            breaks = c(-1, 0, 1, 10, 50, Inf),
+                                            labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),
+                                            right = TRUE)) %>%
+  ggplot(aes(x = Seasonal_Total_Rprts_Segment, fill = Seasonal_Total_Rprts_Segment)) +
+  geom_bar(color = "#8491a3") +
+  geom_text(stat = 'count', aes(label = scales::percent(..count../sum(..count..))), vjust = -0.5) +
+  labs(y = "Number of Users", x = "Seasonal Reports Filled 2023") +
+  scale_fill_manual(values = c( "#d34e24", "#38726c", "#c1dff0", "#e0c40d","#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "none")
+
+
+data %>%
+  filter(year(Registered_Participation_Date) == 2022) %>%
+  mutate(Rprts_Filled_2022_Segment = cut(Rprts_Filled_2022,
+                                         breaks = c(-1, 0, 1, 10, 50, Inf),
+                                         labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),
+                                         right = TRUE)) %>%
+  ggplot(aes(x = Rprts_Filled_2022_Segment, fill = Rprts_Filled_2022_Segment)) +
+  geom_bar(color = "#8491a3") +
+  geom_text(stat = 'count', aes(label = scales::percent(..count../sum(..count..))), vjust = -0.5) +
+  labs(y = "Number of Users", x = "Reports Filled in 2022") +
+  scale_fill_manual(values = c( "#d34e24", "#38726c","#e0c40d", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "none")
+
+```
+
+When considering all those who registered since the update we see that its not even **50/50** split, but  **83%** of the users actually have not filled a single report over the years, and when considering reports filled within the mosquito season of 2023, the rate becomes close to **95%** of users, seeing that a lot of 1 time participants have already become inactive.
+
+To be more specific, and exclude the impact of users who might have signed up in the middle or even after the end of the 2023 season, and avoid the added impact of long registered inactive users, we look in the third and final chart, at the users who have registered in 2022 and only reports that were filled by them in 2022, Still we see that similar to the graph considering all the registered citizen scientists, out of **63,766** Citizen Scientists who registered in 2022, **55,349** or more than **86%**, have not filled a single report.
+
+The mean number of reports filled for the year, **0.1164** reports per citizen scientist, was skewed by **0.03%** of the participants that filled more than 50 reports and **0.53%** that filled more than 10 reports.
+
+This makes clear two things for the future of the project and analysis.
+The first step should be to push those who do not participate at all to fill at least 1 report, and in the case of the experiment, check if messaging has had any significant impact in doing that.
+The importance of excluding outliers before considering changes in averages
+
+
+### Segmented Distribution, Message Receivers
+```{r Seg Distribution Messaged, echo = FALSE}
+received_msgs %>%
+  mutate(Total_Rprts_Segment = cut(Total_Rprts_Filled,
+                                   breaks = c(-1, 0, 1, 10, 50, Inf),
+                                   labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),
+                                   right = TRUE)) %>%
+  ggplot(aes(x = Total_Rprts_Segment, fill = Total_Rprts_Segment)) +
+  geom_bar(color = "#8491a3") +
+  geom_text(stat = 'count', aes(label = scales::percent(..count../sum(..count..))), vjust = -0.5, position=position_stack(vjust = 0.0001), size=3) +
+  labs(y = "Number of Users", x = "Total Reports Filled") +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24", "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "none")
+
+received_msgs %>%
+  mutate(Rprts_Filled_Season_Segment = cut(Season_Rprts_Filled_2023,
+                                           breaks = c(-1, 0, 1, 10, 50, Inf),
+                                           labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),
+                                           right = TRUE)) %>%
+  ggplot(aes(x = Rprts_Filled_Season_Segment, fill = Rprts_Filled_Season_Segment)) +
+  geom_bar(color = "#8491a3") +
+  geom_text(stat = 'count', aes(label = scales::percent(..count../sum(..count..))), vjust = -0.5, position=position_stack(vjust = 0.0001), size=3) +
+  labs(y = "Number of Users", x = "Reports Filled in 2023 Season") +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24", "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "none")
+
+received_msgs %>%
+  filter(year(Registered_Participation_Date) == 2022) %>%
+  mutate(Rprts_Filled_2022_Segment = cut(Rprts_Filled_2022,
+                                         breaks = c(-1, 0, 1, 10, 50, Inf),
+                                         labels = c("0 reports", "1 report", "2-10 reports", "11-50 reports", "50+ reports"),
+                                         right = TRUE)) %>%
+  ggplot(aes(x = Rprts_Filled_2022_Segment, fill = Rprts_Filled_2022_Segment)) +
+  geom_bar(color = "#8491a3") +
+  geom_text(stat = 'count', aes(label = scales::percent(..count../sum(..count..))), vjust = -0.5, position=position_stack(vjust = 0.0001), size=3) +
+  labs(y = "Number of Users", x = "Reports Filled in 2022 (By Participants Registered in 2022)") +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24", "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "none")
+
+```
+
+When Considering the participants that have receive messages, it becomes clear that those who have responded to the survey request are mostly those who are considered frequent users, with a drastic change of distribution when considering all reports filled, as all of them have at least filled a single report, and the segment who is 50+ all time reports makes up almost **20%**. 
+
+The differences are similar in the case of seasonal reports for 2023, where although we start seeing users who have received messages failing to fill reports, the rate is much lower than the general population of participants. This is also true when checking the segmentation of only the participants who have signed up/registered in 2022 filled  and reports they filled in 2022.
+
+
+### Demographic Distribution
+```{r Report Demographic , echo = FALSE}
+
+survey_completed %>% 
+  filter(Gender %in% c("Male", "Female")) %>% 
+  ggplot(aes(x = Gender, fill = Total_Rprts_Segment)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24", "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  labs(y = "Percentage of Users", x = "Gender", fill = "Reports Segment") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(stat='count', aes(label=..count..), position=position_fill(vjust = 0.5), size=3)
+
+
+survey_completed %>% 
+  ggplot(aes(x = Age_Group, fill = Total_Rprts_Segment)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
+  scale_fill_manual(values = c("#e0c40d", "#d34e24", "#38726c", "#c1dff0", "#8491a3", "#16302b", "#16697a")) +
+  labs(y = "Percentage of Users", x = "Age Group", fill = "Reports Segment") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(stat='count', aes(label=..count..), position=position_fill(vjust = 0.5), size=3)
+```
+
+A quick view of the volume of total reporting of different demographic segments, assessing only those who completed the survey.
+
+### Chronological Distribution
+
+
+```{r Report Chronological , echo = FALSE}
+ggplot(data = reports_data %>%
+         mutate(Rprt_Date = as.Date(Rprt_Date)) %>%
+         filter(year(Rprt_Date) >= 1900 & year(Rprt_Date) <= 2262) %>%
+         count(Month = floor_date(Rprt_Date, "month"))) +
+  geom_bar(aes(x = Month, y = n), stat = "identity", fill = "#16697a") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y") +
+  labs(title = "Monthly Report Counts",
+       x = "Month",
+       y = "Number of Reports") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+ggplot(data = reports_data %>%
+         mutate(Rprt_Date = as.Date(Rprt_Date), 
+                Year = year(Rprt_Date), 
+                Week = week(Rprt_Date)) %>%  
+         filter(Year == 2021) %>%
+         count(Week)) +
+  geom_bar(aes(x = Week, y = n), stat = "identity", fill = "#16697a") +
+  scale_x_continuous(breaks = seq(1, 52, by = 2)) +  
+  labs(title = "Weekly Report Distribution in 2021",
+       x = "Week Number",
+       y = "Number of Reports") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size = 7))
+
+ggplot(data = reports_data %>%
+         mutate(Rprt_Date = as.Date(Rprt_Date), 
+                Year = year(Rprt_Date), 
+                Week = week(Rprt_Date)) %>%  
+         filter(Year == 2022) %>%
+         count(Week)) +
+  geom_bar(aes(x = Week, y = n), stat = "identity", fill = "#16697a") +
+  scale_x_continuous(breaks = seq(1, 52, by = 2)) +  
+  labs(title = "Weekly Report Distribution in 2022",
+       x = "Week Number",
+       y = "Number of Reports") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size = 7))
+
+
+ggplot(data = reports_data %>%
+         mutate(Rprt_Date = as.Date(Rprt_Date), 
+                Year = year(Rprt_Date), 
+                Week = week(Rprt_Date)) %>%  
+         filter(Year == 2023) %>%
+         count(Week)) +
+  geom_bar(aes(x = Week, y = n), stat = "identity", fill = "#16697a") +
+  scale_x_continuous(breaks = seq(1, 47, by = 2)) +  
+  labs(title = "Weekly Report Distribution in 2023",
+       x = "Week Number",
+       y = "Number of Reports") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size = 7))
+```
+
+Based on the volume of reporting throughout the years, the Mosquito Season can be consdiered to be roughly between 01/05 and 31/10
+
+
+
