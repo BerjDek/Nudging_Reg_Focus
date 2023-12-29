@@ -33,7 +33,7 @@ library(dplyr)
 
 # Descriptive Analysis
 
-## Ability of Survey to be Representative of Citizen Scientists
+## Loading Data
 ```{r Data Load, echo = FALSE}
 data <- read.csv("loaddata.csv", header = TRUE)
 survey_data <- read.csv("CleanSurveydData.csv", header = TRUE)
@@ -44,8 +44,13 @@ survey_completed <- read.csv("sureycompdata.csv", header = TRUE)
 received_msgs <- read.csv("recmsgdata.csv", header = TRUE)
 report_msg_wide <- read.csv("reportmsgwide.csv", header = TRUE)
 report_msg_long <- read.csv("reportmsglong.csv", header = TRUE)
+
+survey_completed <- survey_completed %>%
+  mutate_at(vars(Age_Group, Gender, Country, Reg_Orientation_Cat), as.factor)
+
 ```
 
+## Ability of Survey to be Representative of Citizen Scientists
 Before starting to the analysis first we check how representative the survey is of the general 
 population size is the total number of citizen scientists who ahve registered 
 
@@ -55,7 +60,8 @@ population_size <- nrow(data)  # Total population that downloaded the app
 sample_size <- nrow(survey_completed)        # Sample size who completed the survey
 confidence_level_constant <- 1.96  # 95% confidence level
 
-# Assuming maximum variability since we don't know the population characteristics (p=0.5 for maximum variability)
+# Assuming maximum variability since we don't know the population characteristics
+#(p=0.5 for maximum variability)
 p <- 0.5
 
 # Calculate the margin of error using the formula with finite population correction
@@ -75,7 +81,8 @@ completion_rate <- (sample_size / attempts_made) * 100
 list(margin_of_error_percentage = margin_of_error_percentage, 
      response_rate = response_rate, 
      completion_rate = completion_rate)
-rm(population_size,sample_size, confidence_level_constant, p,margin_of_error, margin_of_error_percentage, invitations_seen, attempts_made, response_rate, completion_rate)
+rm(population_size,sample_size, confidence_level_constant, p,margin_of_error,
+   margin_of_error_percentage, invitations_seen, attempts_made, response_rate, completion_rate)
 ```
 
 While the response rate of **52.88%** among those who viewed the invitation is robust.
