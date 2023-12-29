@@ -1,0 +1,364 @@
+---
+title: "Significance Analysis"
+author: "Berj Dekramanjian"
+date: "2023-12-29"
+output: pdf_document
+---
+
+---
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+
+```
+
+# Loaded Packages
+- tidyverse
+- car
+- scales
+- pwr
+- lme4
+- MASS
+- multcomp
+- dplyr
+```{r Package, include=FALSE, warning=FALSE}
+library(tidyverse)
+library(car)
+library(scales)
+library(broom)
+library(pwr)
+library(lme4)
+library(MASS)
+library(multcomp)
+library(dplyr)
+```
+
+
+## Loading Data
+```{r Data Load, echo = FALSE}
+data <- read.csv("loaddata.csv", header = TRUE)
+survey_data <- read.csv("CleanSurveydData.csv", header = TRUE)
+message_data <- read.csv("CleanMessageData.csv", header = TRUE)
+reports_data <- read.csv("CleanReportsData.csv", header = TRUE)
+user_data <- read.csv("CleanUserData.csv", header = TRUE)
+survey_completed <- read.csv("sureycompdata.csv", header = TRUE)
+received_msgs <- read.csv("recmsgdata.csv", header = TRUE)
+report_msg_wide <- read.csv("reportmsgwide.csv", header = TRUE)
+report_msg_long <- read.csv("reportmsglong.csv", header = TRUE)
+```
+
+
+# Siginificance Testing
+
+
+## Participant Regulatory Orientation
+
+To check if the distribution of regulatory focus scores of participants is significantly different we conduct a one-sample t-test to compare the mean of the sample to the average regulatory focus mean of a general population.
+
+```{r Participant Regulatory Orientation  , echo = TRUE, warning=FALSE}
+mean_reg_orientation <- mean(survey_completed$Reg_Orientation, na.rm = TRUE)
+t_test_result <- t.test(survey_completed$Reg_Orientation, mu = 0, na.rm = TRUE)
+mean_reg_orientation
+t_test_result
+rm(mean_reg_orientation, t_test_result)
+```
+The average regulatory focus of the participant pool that responded to the survey was significantly different than the norm, generally considered to be neutral population-wide, with a tendency of western countries to be more promotion oriented and yield a positive average, the t-test comparing the survey result to that the population yielded a t-statistic equal to to **-4.3** with 215 degrees of freedom, and with a p-value of **2.524e-05** well below the significance threshold, indicating that the mean regulatory orientation for users who completed the survey is significantly different from 0 and more Prevention oriented.
+
+**The alternative hypothesis, which posits that the true mean is not equal to zero, is supported by the data**
+
+```{r Participant Regulatory Orientation Vis, echo = FALSE, warning=FALSE}
+ggplot(survey_completed, aes(x = Reg_Orientation)) +
+  geom_histogram(aes(y = ..density..), binwidth = 1, fill = "steelblue", alpha = 0.7) +
+  geom_density(color = "#b4464b") +
+  geom_vline(xintercept = -1.402778, color = "#82b446", linetype = "dashed") +
+  geom_vline(xintercept = -2.0448547, color = "#b47846", linetype = "dashed") +
+  geom_vline(xintercept = -0.7607009, color = "#b47846", linetype = "dashed") +
+  annotate("text", x = -1.402778, y = Inf, label = "Mean (-1.40)", vjust = 0.8, color = "#82b446", size = 3) +
+  annotate("text", x = -2.0448547, y = Inf, label = "Lower CI (-2.04)", vjust = 2,hjust = 1.2, color = "#b47846", size = 3) +
+  annotate("text", x = -0.7607009, y = Inf, label = "Upper CI (-0.76)", vjust = 2, hjust = -0.3, color = "#b47846", size = 3) +
+  labs(title = "One Sample t-test Result Visualization",
+       x = "Reg Orientation Value",
+       y = "Density") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 1, size = 7))
+
+```
+
+
+To move beyond averages and check the distribution of the pool of participants that answered the survey, based on their regulatory focus orientation (regardless if mild or extreme), the count of users on each side was analysed. A direct comparison of users that have been deemed by the test either to be of either promotion or prevention orientation has been done through a Chi-squared test, to determine  whether the distribution of users deviated significantly from a uniform distribution.
+
+```{r Participant Regulatory Orientation participants  , echo = TRUE, warning=FALSE}
+oriented_data <- subset(survey_completed, Reg_Orientation_Cat %in% c('Prevention', 'Promotion'))
+oriented_counts <- table(oriented_data$Reg_Orientation_Cat)
+oriented_counts <- oriented_counts[names(oriented_counts) != "Neutral"]
+oriented_counts
+
+# Since we expect the counts to be equal, the expected frequency for each is half of the total count
+total_expected_count <- sum(oriented_counts)
+expected_counts <- rep(total_expected_count / 2, 2)
+
+chi_squared_test <- chisq.test(oriented_counts, p = rep(1/2, 2))
+print(chi_squared_test)
+
+rm(orientation_counts, chi_squared_test, oriented_data, oriented_counts, total_expected_count, expected_counts)
+```
+
+The test yielded a chi-squared statistic equal to **14.083** and a p-value of **0.00017** suggesting  a significant association or difference in the users' regulatory orientation categories significantly different from a uniform one.
+
+
+
+
+## Participant Motivation Rating
+We took a quick look done during the descriptive analysis at the distribution of motivation ratings of the survey participants. To take a deeper look an ANOVA test was done to assesses whether there are statistically significant differences in the mean ratings across the different higher order motivator categories.
+
+### ANOVA Difference Between Ratings of Different Motivators
+```{r Participant Motivation ANOVA, echo = TRUE}
+motivator_ratings <- survey_completed %>%
+  dplyr::select(Openness_To_Change, Self_Enhancement, Continuity, Self_Transcendence, Security, Teaching) %>%
+  pivot_longer(cols = everything(), names_to = "Motivator", values_to = "Rating")%>%
+  drop_na(Rating)
+ 
+anova_result <- aov(Rating ~ Motivator, data = motivator_ratings)
+summary(anova_result)
+```
+
+The analysis revealed a highly significant difference among the ratings of five motivators; **(F(5, 1298) = 356, p < 2e-16)**. 
+
+To further get detailed insights into the differences between various motivators post-hoc analysis with Tukey's Honest Significant Difference (HSD) test was done, and only the significant differences dplyr::selected to be showcased. Furthermore effect size was measured using Cohen's d to standardize the difference between the means.
+
+
+### Post-Hoc Analysis
+```{r Participant Motifvation Tukey, echo = TRUE}
+if (summary(anova_result)[[1]][["Pr(>F)"]][1] < 0.05) {
+  tukey_result <- TukeyHSD(anova_result)
+  print(tukey_result)
+}
+
+SD_pooled <- sqrt(sum(anova_result$residuals^2) / anova_result$df.residual)
+
+means <- tapply(motivator_ratings$Rating, motivator_ratings$Motivator, mean)
+cohen_d_security <- sapply(means, function(x) (means['Security'] - x) / SD_pooled)
+cohen_d_self_transcendence <- sapply(means, function(x) (means['Self_Transcendence'] - x) / SD_pooled)
+cohen_d_Openness_To_Change <- sapply(means, function(x) (means['Openness_To_Change'] - x) / SD_pooled)
+cohen_d_security
+cohen_d_self_transcendence
+cohen_d_Openness_To_Change
+rm(motivator_ratings, anova_result, tukey_result, SD_pooled, means, cohen_d_security, cohen_d_self_transcendence, cohen_d_Openness_To_Change)
+```
+Tukey HSD test and Cohen's d analysis highlighted several significant and large differences. Notably, both Security and Self Transcendence demonstrated significant differences  when compared to Continuity and Self Enhancement. Openness to Change has also shown a significantly higher effect size when compared with Self Enhancement and Continuity, however it was also significantly lower when compared to Security and Self Transcendence, suggesting they are more influential in shaping the participants actions. In very simplified terms, the findings suggest that apprehension and altruism might be more important to the citizen scientists Participating in Mosquito Alert than the novelty of approach.
+
+
+
+## Impact of Regulatory Focus on Motivation Ratings
+
+Considering that Regulatory focus theory suggests that those with a prevention focus are  more likely to be motivated by safety, security, and responsibility, we attempt to see if variation of regulatory focus among those who completed the survey has a significant impact on the rating they have given various motivators.
+
+
+We start off by completing a series of One-way ANOVAs, to treat each motivator as a separate dependent variable
+
+### ANOVA of Reg Focus Impact on Rating Motivators
+```{r Reg Orientation Motivation ANOVA ALL Test, echo = TRUE, results='hide' }
+motivator_columns <- c("Continuity", "Self_Enhancement", "Self_Transcendence", "Security", "Openness_To_Change", "Teaching")
+
+for (motivator in motivator_columns) {
+  formula <- as.formula(paste(motivator, "~ Reg_Orientation_Cat"))
+  anova_result <- aov(formula, data = survey_completed)
+  cat("\nANOVA results for", motivator, ":\n")
+  print(summary(anova_result))
+  cat("\n")
+}
+
+```
+
+The results show that the only significant results was the difference in the way Security as a motivator was rated by participants with varying regulatory focus orientation (F(2, 212) = 3.528, p = 0.0311). There was a marginally significant main effect for Self Transcendence as well (F(2, 212) = 2.664, p = 0.072), suggesting a possible influence, however, not strong enough to be considered statistically significant.
+
+To further analyse the variation for Security we complete the One-Way ANOVA and complete Tukey multiple comparisons of means
+  
+### ANOVA of Reg Focus Impact on Security as Motivator and Post Hoc  
+```{r Reg Orientation Motivation Anova Test, echo = TRUE}
+anova_result <- aov(Security ~ Reg_Orientation_Cat, data = survey_completed)
+summary(anova_result)
+
+if (summary(anova_result)[[1]][["Pr(>F)"]][1] < 0.05) {
+  tukey_result <- TukeyHSD(anova_result)
+  print(tukey_result)
+}
+
+rm(anova_result, motivator_columns)
+```
+
+The Tukey test suggests that there might be a marginal difference in Security scores between Prevention-oriented and Neutral or Promotion, with those with prevention orientation rating it higher, but no significant differences were found.
+
+
+
+To take a closer look and look at the variation between Promotion and Prevention orientations specifically, we subset the data to complete a Welch Two Sample t-test. 
+
+### T-test of Reg Focus Impact on Rating Security
+```{r Reg Orientation Motivation T-test, echo = TRUE}
+subset_data <- survey_completed[survey_completed$Reg_Orientation_Cat %in% c("Prevention", "Promotion"), ]
+
+t_test_results <- t.test(Security ~ Reg_Orientation_Cat, data = subset_data)
+print(t_test_results)
+
+rm(subset_data)
+```
+
+Again, while we see a numerical difference in the mean Security scores between Prevention-oriented and Promotion-oriented individuals, this difference is not statistically significant.
+
+**The null hypothesis, which posits that the there is no difference in the rating of security based on Reg Focus Orientation, is supported by the data**
+
+
+## Impact of Messaging
+
+
+### Yearly/Seasonal Average Difference Analysis
+
+To consider the impact of sending messages to users on their activity and completion of reports. The first thing we check is the change in average number of reports completed by users that were part of the experiment and received messages, and have been registered citizen scientists for at least 2 years, allowing them in principle to fill reports in different mosquito seasons/years.
+
+To measure the difference in reporting averages we complete a series of paired t-tests. 
+
+```{r Report Message Seasonal Average, echo = TRUE}
+
+paired_t_test_result <- received_msgs %>%
+  filter(Registered_Participation_Date < as.Date('2023-01-01')) %>%
+  with(t.test(Season_Rprts_Filled_2023, Season_Rprts_Filled_2022, paired = TRUE))
+print(paired_t_test_result)
+
+paired_t_test_result <- received_msgs %>%
+  filter(Registered_Participation_Date < as.Date('2022-01-01')) %>%
+  with(t.test(Season_Rprts_Filled_2022, Season_Rprts_Filled_2021, paired = TRUE))
+print(paired_t_test_result)
+
+paired_t_test_result <- data %>%
+  filter(Registered_Participation_Date < as.Date('2023-01-01')) %>%
+  filter(!User_ID %in% received_msgs$User_ID) %>% 
+  with(t.test(Season_Rprts_Filled_2023, Season_Rprts_Filled_2022, paired = TRUE))
+print(paired_t_test_result)
+
+rm(paired_t_test_result)
+```
+
+In a paired t-test comparing the 2023 and 2022 seasons for the participants that have received messages in 2023 and were registered before 2023, a significant mean difference of approximately 12 additional reports was found **(t = 2.9778, df = 140, p-value = 0.003113)**. The 95% confidence interval ranging from **4.1 to 20.1** additional reports.
+
+When repeating the test to compare 2022 and 2021 seasons for the users received messages in 2023 and were registered before 2022, the outcome was different with a non-significant **-0.49** decrease in average number of reports; **(t = -0.12358, df = 70, p-value = 0.902)**.
+
+More importantly comparing the 2023 and 2022 seasons, for all participants bar the ones who were part of the experiment and were registered before 2023, we see a statistically significant drop **(-0.11)** in average number of reports (t = -26.032, df = 186646, p-value < 2.2e-16)
+
+as with the second and third t-tests, it is usual to see that the number of reports reduce on average for the same participants over time, due to attrition and loss of interest.
+The fact that the average has increased for those who received messages is promising.
+
+
+We continue with further analysis. 
+
+
+### Difference-in-Differences Analysis
+
+In order to assess the change in participant behavior during the period of messaging, we compare the number of reports filled by participants before, during and after their respective messaging period. Note that since the users are distributed in the date they recived the first message and the time frame in which they received messages, seasonality is better accounted for.
+The number of reports for each user and each specific period was calculated by measuring the specific days in between which the specific participant received messages and then adding the number of reports in exactly the same amount of days before and after the first and last message respectively
+
+```{r Report Dif-in-Dif, echo = TRUE}
+
+paired_t_test_result <- with(received_msgs, t.test(Rprts_During_Msging, Rprts_Before_Msging,  paired = TRUE))
+print(paired_t_test_result)
+
+paired_t_test_result <- with(received_msgs, t.test(Rprts_During_Msging, Rprts_After_Msging,  paired = TRUE))
+print(paired_t_test_result)
+
+paired_t_test_result <- with(received_msgs, t.test(Rprts_After_Msging, Rprts_After_Msging,  paired = TRUE))
+print(paired_t_test_result)
+
+```
+
+When comparing the average number of reports filled by the users that participated in the experiment, before during and after receiving messages.
+we find a significant increase in the mean number of reports during messaging when compared to before **(2.68)** **p= 0.01** as well as a non significant increase  **(1.59)** **p= 0.09** when comparing to after the duration.
+
+The participants seem to keep reporting at a higher rate after the messaging period  is concluded when compared to before **(1.09)** **p= 0.47** the messaging period but the difference is not significant.
+
+
+
+### Time-Series Analysis.
+
+One final check about the impact of messaging on reporting behavior can be seen through a time series analysis.
+Where each day of the mosquito season is analysed per user, and their completion of a report and reception of messages transformed into a binary variable. 
+
+
+```{r Report Time Series, echo = TRUE}
+contingency_table <- table(report_msg_wide$Msg_Received,report_msg_wide$Report)
+contingency_table
+chi_test_result <- chisq.test(contingency_table)
+print(chi_test_result)
+
+rm(contingency_table,chi_test_result)
+```
+
+Measuring how much the observed frequencies of the number of days with/without messages and reports deviate from the expected frequencies under the null hypothesis (no association between receiving messages and filling reports). The Pearson's Chi-squared test shows a clear in variation of days with/without messages when it comes to a report being filled by the participation. **p-value = 0.003997**
+
+
+### Generalized Linear Model 
+```{r Report time series GLM, echo = TRUE}
+model <- glmer(Report ~ Msg_Received + (1 + Date|User_ID),
+               data = report_msg_wide,
+               family = binomial)
+
+summary(model)
+```
+
+
+The logistic regression analysis revealed that receiving a message  increases the likelihood of a user filing a report, with statistical significance, suggesting a positive  correlation between message receipt and report filing behavior **(coefficient = 0.28091 , p = 0.000235)**
+
+
+### Reporting intensity 
+```{r Report time series poisson, echo = TRUE}
+model <- glmer(total_reports ~ Msg_Received + (1 + Date|User_ID), 
+               data = report_msg_wide, 
+               family = poisson) 
+summary(model)
+```
+
+Completing the analysis using Poisson regression to check if messaging helps with the intensity of messaging indicates that receiving a message is positively associated with the total number of reports filed **(coefficient = 0.22573, p = 8.97e-07)**, suggesting that message receipt  increases report filing frequency on a given date.
+
+
+Based on  the three separate approaches **The alternative hypothesis, which posits that the true mean is not equal to zero, is supported by the data** showing that messaging has a positive impact on participant report filling.
+
+
+### Variation between message type on report filing
+```{r Report time series msg type, echo = TRUE}
+report_msg_wide$Msg_Type <- relevel(report_msg_wide$Msg_Type, ref = "None")
+
+
+model <- glmer(Report ~ Msg_Type + (1 + Date|User_ID), 
+               data = report_msg_wide, 
+               family = binomial(link = "logit"))
+summary(model)
+```
+
+Both Prevention and Promotion messages seem to be more effective than Neutral messages in spurring users to fill reports.
+
+### Importance of Message and Orientation Agreement
+```{r Message and Orientation Agreement , echo = TRUE}
+contingency_table <- table(report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Orientation_Msg_Agreement,report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Report)
+
+chi_test_result <- chisq.test(contingency_table)
+print(chi_test_result)
+```
+From the contingency table we see that whenever messages are sent, users are more likely to fill a report when there is an agreement between the message sent  and their regulatory orientation. Doing a chi test we see that the difference in the averages is significant with **p = 0.01918** 
+
+Looking further into detail we compare between different regulatory orientations.
+
+### Importance of Message Agreement with specific Orientation.
+```{r Message value per specific Orientation , echo = TRUE}
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Prevention", ], 
+               family = binomial(link = "logit"))
+summary(model)
+
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Promotion", ], 
+               family = binomial(link = "logit"))
+summary(model)
+```
+Using Generalized Models after segmenting the data to include only those with either prevention or promotion orientation, we see that although message type agreement with the users regulatory focus has a positive impact in both cases, the effect is significant for those with prevention orientation **p = 0.02**.
+
+

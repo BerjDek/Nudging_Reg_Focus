@@ -522,7 +522,7 @@ ggplot(data = reports_data %>%
   theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size = 7))
 ```
 
-Based on the volume of reporting throughout the years, the Mosquito Season can be consdiered to be roughly between 01/05 and 31/10
+Based on the volume of reporting throughout the years, the Mosquito Season can be considered to be roughly between 01/05 and 31/10
 
 
 
