@@ -5,7 +5,8 @@ rep_msg_2023 <- reports_data %>%
   filter(year(as.Date(Rprt_Date)) == 2023) %>%
   mutate(Rprt_Type = as.character(Rprt_Type)) %>% 
   rename(Date = Rprt_Date) %>% 
-  filter(Date >= "2023-05-01"& Date <= "2023-10-30")
+  filter(Date >= "2023-05-01"& Date <= "2023-10-31")
+
 
 msg_rep_2023<- raw_message_data %>%
   filter(year(Msg_Date) == 2023) %>% 
@@ -13,11 +14,11 @@ msg_rep_2023<- raw_message_data %>%
   mutate(read_notification= as.integer(read_notification == "t"), Msg_Date = as.Date(Msg_Date)) %>% 
   dplyr::select(User_ID, Msg_Date, type, read_notification, Msg_Nmbr) %>% 
   rename(Msg_Type = type, Msg_Seen = read_notification, Date = Msg_Date) %>% 
-filter(Date >= "2023-05-01"& Date <= "2023-10-30")
+filter(Date >= "2023-05-01"& Date <= "2023-10-31")
 
 
 
-dates_2023  <- seq.Date(as.Date("2023-05-01"), as.Date("2023-10-30"), by = "day")
+dates_2023  <- seq.Date(as.Date("2023-05-01"), as.Date("2023-10-31"), by = "day")
 
 expanded_reports <- expand.grid(User_ID = unique(rep_msg_2023$User_ID), Date = dates_2023)
 expanded_messages <- expand.grid(User_ID = unique(msg_rep_2023$User_ID), Date = dates_2023)
@@ -94,67 +95,71 @@ print(chi_test_result)
 
 # Generalized Linear Model for the relationship between a report being filled and message being received by a user on a given day
 
-model <- glm(Report ~ Msg_Received, family = "binomial", data = report_msg_wide)
-summary(model)
 
-model <- glmer(Report ~ Msg_Received + (1|User_ID),
+model <- glmer(Report ~ Msg_Received + (1 + Date|User_ID),
                data = report_msg_wide,
                family = binomial)
 summary(model)
 
 
-
-
 # checking the effect of messages on the total number of reports filed. reporting intensity
 
-model <- glmer(total_reports ~ Msg_Received + (1 | User_ID), 
+model <- glmer(total_reports ~ Msg_Received + (1 + Date|User_ID), 
                data = report_msg_wide, 
-               family = poisson)
+               family = poisson) 
 summary(model)
 
-
-
-#negative Binomial Model because of over dispersion (variance in the count data is larger than the mean)
-#model <- glm.nb(total_reports ~ Msg_Received, data = report_msg_wide)
-#summary(model)
-#NOT SIGNIGICANT
 
 
 # Logistic Regression for the impact of message type on report filing
 report_msg_wide$Msg_Type <- relevel(report_msg_wide$Msg_Type, ref = "None")
 
 
-model <- glmer(Report ~ Msg_Type + (1 | User_ID), 
+model <- glmer(Report ~ Msg_Type + (1 + Date|User_ID), 
                data = report_msg_wide, 
                family = binomial(link = "logit"))
 summary(model)
-#prevention is significant and promotion is positive but not significant when compared to NONE in the base
+#both prevention and promotion are significant
 
 
-#comparing the Message types to each others directly
-library(multcomp)
-
-model <- glmer(Report ~ Msg_Type + (1 | User_ID), 
+#checking intensity
+model <- glmer(total_reports ~ Msg_Type + (1 + Date|User_ID), 
                data = report_msg_wide, 
-               family = binomial(link = "logit"))
-
-# Specify the comparisons
-comparisons <- glht(model, linfct = mcp(Msg_Type = "Tukey"))
-
-# Perform the multiple comparisons
-summary(comparisons) # No significant result even if prevention seems to be the top among messages.
+               family = poisson) 
+summary(model)
 
 
 
+#checking the importance of message orientation agreement
+
+contingency_table <- table(report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Orientation_Msg_Agreement,report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Report)
+contingency_table
+chi_test_result <- chisq.test(contingency_table)
+print(chi_test_result)
+
+table(report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Orientation_Msg_Agreement,report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Report)
 
 
+#checking agreement of message for each type of orientation
 
-#checking impact of  user regulatory orientation
 
-model <- glmer(Report ~ Reg_Orientation_Cat + (1 | User_ID), 
-               data = report_msg_wide, 
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Prevention", ], 
                family = binomial(link = "logit"))
 summary(model)
+
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Promotion", ], 
+               family = binomial(link = "logit"))
+summary(model)
+
+#it matters more for prevention oriented to receive prevention oriented messages
+
+
+
+
+#The whole thing with reporters over 90 percentile removed.
 
 
 
@@ -175,53 +180,53 @@ print(chi_test_result)
 
 # Generalized Linear Model for the relationship between a report being filled and message being received by a user on a given day
 
-model <- glmer(Report ~ Msg_Received + (1|User_ID),
-               data = report_msg_wide_reduced, 
+
+model <- glmer(Report ~ Msg_Received + (1 + Date|User_ID),
+               data = report_msg_wide_reduced,
                family = binomial)
-summary(model)
+summary(model) #significant but less so
 
 
 # checking the effect of messages on the total number of reports filed. reporting intensity
 
-model <- glmer(total_reports ~ Msg_Received + (1 | User_ID), 
+
+model <- glmer(total_reports ~ Msg_Received + (1 + Date|User_ID), 
                data = report_msg_wide_reduced, 
-               family = poisson)
-summary(model)
-
-
+               family = poisson) 
+summary(model)# very significant
 
 #negative Binomial Model because of over dispersion (variance in the count data is larger than the mean)
 #model <- glm.nb(total_reports ~ Msg_Received, data = report_msg_wide_reduced)
 #summary(model)
 #SIGNIFICANT
 
-
-
-# Logistic Regression for the impact of message type on report filing
-
-report_msg_wide$Msg_Type <- relevel(report_msg_wide$Msg_Type, ref = "None")
-
-model <- glm(Report ~ Msg_Type, family = binomial(link = "logit"), data = report_msg_wide)
-summary(model)
-
-
-model <- glmer(Report ~ Msg_Type + (1 | User_ID), 
-               data = report_msg_wide, 
-               family = binomial(link = "logit"))
-summary(model)
-
-
-
-# Logistic Regression for the impact of message type on report filing
+#checking the msg type
 
 report_msg_wide_reduced$Msg_Type <- relevel(report_msg_wide_reduced$Msg_Type, ref = "None")
 
 
-model <- glmer(Report ~ Msg_Type + (1 | User_ID), 
+model <- glmer(Report ~ Msg_Type + (1 + Date|User_ID), 
                data = report_msg_wide_reduced, 
                family = binomial(link = "logit"))
-summary(model) #Prevention Significant
+summary(model)
+#both prevention and promotion are significant
 
+
+
+
+#checking agreement of message for each type of orientation
+
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide_reduced[report_msg_wide_reduced$Reg_Orientation_Cat == "Prevention", ], 
+               family = binomial(link = "logit"))
+summary(model) #significant agreement for prevention messages
+
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide_reduced[report_msg_wide_reduced$Reg_Orientation_Cat == "Promotion", ], 
+               family = binomial(link = "logit"))
+summary(model)
 
 
 #checking impact of  user regulatory orientation
@@ -229,31 +234,9 @@ summary(model) #Prevention Significant
 model <- glmer(Report ~ Reg_Orientation_Cat + (1 | User_ID), 
                data = report_msg_wide_reduced, 
                family = binomial(link = "logit"))
-summary(model)
+summary(model)#no significant effect for promotion
 
 
-
-
-# Mixed-effects logistic regression model for mediating role of Regulatory orientation of impact of message type on report filling
-model <- glmer(Report ~ Msg_Type * Reg_Orientation_Cat + (1 | User_ID),
-               data =report_msg_wide_reduced,
-               family = binomial)
-summary(model)
-
-
-
-#comparing the Message types to each others directly
-library(multcomp)
-
-model <- glmer(Report ~ Msg_Type + (1 | User_ID), 
-               data = report_msg_wide_reduced, 
-               family = binomial(link = "logit"))
-
-# Specify the comparisons
-comparisons <- glht(model, linfct = mcp(Msg_Type = "Tukey"))
-
-# Perform the multiple comparisons
-summary(comparisons)
 
 
 

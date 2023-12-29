@@ -61,29 +61,19 @@ raw_survey_data <- raw_survey_data %>% mutate(Country = if_else(Country == "", "
 
 raw_survey_data$User_ID <- sub(" target=", "", raw_survey_data$User_ID) #removed target= which was appearing at the end of some uuid's
 
-#turning the Reg Focus Responses to Numeral
-raw_survey_data <- raw_survey_data %>% mutate(Prom_1 = as.numeric(str_extract(Prom_1, "\\d+")),
-                                              Prom_2 = as.numeric(str_extract(Prom_2, "\\d+")),
-                                              Prom_3 = as.numeric(str_extract(Prom_3, "\\d+")),
-                                              Prom_4 = as.numeric(str_extract(Prom_4, "\\d+")),
-                                              Prom_5 = as.numeric(str_extract(Prom_5, "\\d+")),
-                                              Prev_1 = as.numeric(str_extract(Prev_1, "\\d+")),
-                                              Prev_2 = as.numeric(str_extract(Prev_2, "\\d+")),
-                                              Prev_3 = as.numeric(str_extract(Prev_3, "\\d+")),
-                                              Prev_4 = as.numeric(str_extract(Prev_4, "\\d+")),
-                                              Prev_5 = as.numeric(str_extract(Prev_5, "\\d+")))
 
 
 raw_survey_data <- raw_survey_data %>%
-  mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+"))))
+  mutate_at(vars(starts_with("Prom_"), starts_with("Prev_")), list(~as.numeric(str_extract(., "\\d+")))) #turning the Reg Focus Responses to Numeral
+
 
 raw_survey_data <- raw_survey_data %>% mutate(Network = as.numeric(Network))
 
 raw_survey_data <- raw_survey_data %>%  mutate(Participation_Date = as.factor(Participation_Date))
 
-# Converting Other_Citi_Sci to a binary variable
+
 raw_survey_data <- raw_survey_data %>%
-  mutate(Other_Citi_Sci = ifelse(Other_Citi_Sci == "Yes", 1, 0))
+  mutate(Other_Citi_Sci = ifelse(Other_Citi_Sci == "Yes", 1, 0)) # Converting Other_Citi_Sci to a binary variable
 
 
 #creating age groups
@@ -122,9 +112,11 @@ raw_survey_data <- raw_survey_data %>%
   mutate(Continuity = round((Routine + Conformity)/2,2)) %>%
   mutate(Self_Transcendence = round((Universalism_Social + Universalism_Nature + Benevolence+ Help_Science)/4,2))  
 
+colnames(raw_survey_data)
+
 #rearranging 
 raw_survey_data <- raw_survey_data %>% 
-  select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
+  dplyr::select(Response.ID, Last.page, Language, Consent, User_ID, Age, 
          Age_Group, Gender, Country, Participation_Date, Network, 
          Other_Citi_Sci, Reg_Orientation,Reg_Orientation_Cat, 
          Openness_To_Change, Self_Enhancement, Continuity, Self_Transcendence, 
@@ -159,117 +151,15 @@ nrow(raw_survey_data %>% filter(Consent == "Yes" & nzchar(User_ID))%>%
   ungroup())
 str(survey_data)
 
-## There are 237 consents that that have provided User Id's, after removing 7 that have done the survey twice. 
+## There are 238 consents that that have provided User Id's, after removing 8 that have done the survey twice. 
 
-#from the original 450 Observers there are 217 that have completed the entire survey, and provided their 
+#from the original 460 Observers there are 217 that have completed the entire survey, and provided their 
 #User IDs and whose entries will be analyzed. The total number of users that have provided consent and ID, 
-#making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is 237, 
+#making them eligible for the messaging experiment (without necessary knowledge of their regulatory focus) is 238, 
 #confirming the validity of the Messaging Data
 
-write.csv(survey_data, "CleanSurveydDta.csv", row.names = FALSE)
+write.csv(survey_data, "CleanSurveydData.csv", row.names = FALSE)
 
-
-
-#Exploring the age of Participants
-
-mean(survey_data$Age, na.rm = TRUE) # average age is 48.55
-
-
-ggplot(survey_data, aes(x = Age_Group)) +
-  geom_bar(fill = 'blue') +
-  labs(title = 'Frequency of Age Groups', x = 'Age Group', y = 'Frequency') +
-  theme_minimal() +
-  theme(axis.text.y = element_text(angle = 0, hjust = 1))
-
-# Gender Distribution
-gender_dist <- survey_data %>%
-  group_by(Gender) %>%
-  summarize(Frequency = n()) %>%
-  arrange(desc(Frequency))  #128 males to 93 females 
-
-
-ggplot(gender_dist, aes(x = reorder(Gender, -Frequency), y = Frequency)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
-  labs(title = "Gender Distribution", x = "Gender", y = "Frequency") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")
-
-# country distribution
-Country_dist <- survey_data %>%
-  group_by(Country) %>%
-  summarize(Frequency = n()) %>%
-  arrange(desc(Frequency))
-
-ggplot(Country_dist, aes(x = reorder(Country, -Frequency), y = Frequency)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
-  labs(title = "Country Distribution", x = "Country", y = "Frequency") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")
- #majority of participates are from Spain(107) and Italy (81) with Netherlanders coming in 3rd (22)
-
-
-
-# start date for participation
-Start_dist <- survey_data %>%
-  group_by(Participation_Date) %>%
-  summarize(Frequency = n()) %>%
-  arrange(desc(Frequency))
-
-ggplot(Start_dist, aes(x = reorder(Participation_Date, -Frequency), y = Frequency)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
-  labs(title = "Participant Start Date Distribution", x = "Start Year", y = "Frequency") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")
-
-#the users weren't as skewed to 2023 with majority at 75 but not that far off from 2022 (57) and 2021(41)
-
-
-# Network & other citisci
-
-Network_dist <- survey_data %>%
-  group_by(Network) %>%
-  summarize(Frequency = n()) %>%
-  arrange(desc(Network))
-
-ggplot(Network_dist, aes(x = Network, y = Frequency)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  geom_text(aes(label = Frequency), vjust = -0.5, size = 4) +  # Add frequency labels on top of bars
-  labs(title = "Participant Network Distribution", x = "Network of Other Participants", y = "Frequency") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none")
-
-
-#Most of the users don't know anyone else that is using the app.
-
-#checking the average Regulatory Focus
-mean(raw_survey_data$Reg_Orientation, na.rm = TRUE)
-
-
-
-#before creating higher level orders lets see the various levels of each motivator.
-
-
-STM_columns <- raw_survey_data %>% select(Security:Env_Change)
-
-STM_averages <- STM_columns %>%
-  summarise_all(~ mean(., na.rm = TRUE)) %>%
-  gather(key = "Variable", value = "Average") %>%
-  arrange(desc(Average))
-
-ggplot(STM_averages, aes(x = reorder(Variable, Average), y = Average)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  coord_flip() +  
-  theme_minimal() +
-  labs(x = "Motivator", y = "Average") +
-  geom_text(aes(label = round(Average, 2)), hjust = -0.2, size = 3) +  
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 

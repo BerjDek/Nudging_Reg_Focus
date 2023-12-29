@@ -1,10 +1,12 @@
+#initial time series trial
+
 reports_2023 <- reports_data %>%
   filter(year(as.Date(Rprt_Date)) == 2023) %>%
   mutate(Week_Number = week(as.Date(Rprt_Date)))
 
 rep_msg_2023 <- reports_2023 %>% 
   filter(User_ID %in% recieved_msgs$User_ID) %>% 
-  select(-Week_Number,-Rprt_Loc_Choice) %>% 
+  dplyr::select(-Week_Number,-Rprt_Loc_Choice) %>% 
   mutate(Rprt_Type = as.character(Rprt_Type)) %>% 
   rename(Date = Rprt_Date)
 str(rep_msg_2023)
@@ -279,22 +281,36 @@ model <- glmer(total_reports ~ Msg_Received + (1 | User_ID),
 summary(model)
 
 
+
+
 model <- glmer(total_reports ~ Msg_Received + (1 + Date|User_ID), 
                data = report_msg_wide, 
                family = poisson) 
-summary(model)  #significant
+summary(model)  #significant receiving messages increases intensity
 
 
 #all sec:  significant value p =0.00176
 #outliers  highly significant p = 4.42e-05
 #outliers + 2
 
+
+#checking message type effect on intensity
+
+
+
+model <- glmer(total_reports ~ Msg_Type + (1 + Date|User_ID), 
+               data = report_msg_wide, 
+               family = poisson) 
+summary(model) #promotion is way more effective, neutral also good, prevention not significant
+
+
+
 #for the season a significant value p =0.00176, when outliers removed  more significant at  0.000188
 #after taking out additionally two extreme users 4.42e-05
 #for the whole year very high p value
 
 
-
+#checking with negative binomial
 library(MASS)
 model <- glm.nb(total_reports ~ Msg_Received, data = report_msg_wide)
 summary(model)
@@ -313,3 +329,73 @@ summary(model)
 #for the season, binomial modal isn't significant p = 0.121, outliers removed it becomes significant p =  0.0412 
 #after taking out additionally two extreme users 0.0253  
 #for whole year even negative binomial is significant
+
+
+
+
+#Model with Message Type effectiveness. focuses on the days when messages were actually sent and assesses the 
+#effectiveness of different message types.
+
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID),
+                             data = report_msg_wide[report_msg_wide$Msg_Received == 1, ],
+                             family = binomial)
+summary(model)
+
+
+model<- glmer(Report ~ Msg_Type + (1 + Date|User_ID),
+                           data = report_msg_wide[report_msg_wide$Msg_Received == 1, ],
+                           family = binomial)
+summary(model)
+
+
+
+contingency_table <- table(report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Orientation_Msg_Agreement,report_msg_wide[report_msg_wide$Msg_Received == 1, ]$Report)
+contingency_table
+chi_test_result <- chisq.test(contingency_table)
+print(chi_test_result)
+#when checking the days where messages were sent, having an agreement between the message type and the orientation of the user, had a significant result
+#on a report being filled
+
+
+model <- glmer(Report ~ Msg_Received + Msg_Type + (1 + Date | User_ID),
+               data = report_msg_wide,
+               family = binomial)
+summary(model) #gives an error
+
+
+#checking message type effect for each regulatory orientation
+
+model <- glmer(Report ~ Msg_Type + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Prevention", ], 
+               family = binomial(link = "logit"))
+summary(model) #for those prevention oriented both prevention and promotion and prevention are positive
+
+
+
+model <- glmer(Report ~ Msg_Type + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Promotion", ], 
+               family = binomial(link = "logit"))
+summary(model) #for those who are promotion, neutral messages seem to work best, prevention the worst, no significant results
+
+
+model <- glmer(Report ~ Msg_Type + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Neutral", ], 
+               family = binomial(link = "logit"))
+summary(model)  # nothing significant for neutral
+
+
+
+#checking agreement of message for each type of orientation
+
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Prevention", ], 
+               family = binomial(link = "logit"))
+summary(model)
+
+
+model <- glmer(Report ~ Orientation_Msg_Agreement + (1 + Date|User_ID), 
+               data = report_msg_wide[report_msg_wide$Reg_Orientation_Cat == "Promotion", ], 
+               family = binomial(link = "logit"))
+summary(model)

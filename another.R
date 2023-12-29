@@ -1,4 +1,6 @@
 
+#testing change of mesaging duration period.
+
 z2 <- z2 %>%
   filter(!User_ID %in% c("52279491-6446-42b5-96f5-9c9f25b17c9d",  
                          "0a9adcf3-aaac-46a4-8606-7dbc25f1cd67",  
